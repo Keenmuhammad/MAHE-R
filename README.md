@@ -1,4 +1,2 @@
 # MAHE-R
 
-**R-Basics**
-
