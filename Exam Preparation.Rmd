@@ -1,0 +1,681 @@
+---
+title: "Exam Preparation"
+output: html_notebook
+---
+
+
+
+```{r}
+# Data Types
+my_char = 'a'
+print(my_char)
+
+my_int = 10L
+print(my_int)
+
+my_numeric = 10
+print(my_numeric)
+
+my_logic = TRUE
+print(my_logic)
+
+```
+
+
+```{r}
+my_vec= c(1L, 2L, 3L, 4L, 5L)
+print(my_vec)
+
+my_vec1 = 1:5
+print(my_vec1)
+
+my_vec2 = seq(from = 1, to = 5, by = 1)
+print(my_vec2)
+
+length(my_vec)
+class(my_vec)
+class(my_vec1)
+class(my_vec2)
+str(my_vec)
+typeof(my_vec2)
+```
+```{r}
+my_vec[1] = 100L
+print(my_vec)
+
+```
+
+```{r}
+my_vec3 = c(1, 2, NA, 4)
+print(my_vec3)
+ 
+is.na(my_vec3)
+
+anyNA(my_vec3)
+```
+```{r}
+1/0
+0/0
+```
+
+```{r}
+my_list = list (5)
+my_list1 = list (1, 2, 'Muhmmad', c('a', 'b', 'c'))
+print(my_list)
+print(my_list1)
+```
+
+```{r}
+names(my_list1) = c('first', 'second', 'third', 'fourth')
+str(my_list1)
+```
+
+```{r}
+my_list1[1]
+my_list1$third ='Ibrahim'
+print(my_list1)
+```
+
+```{r}
+my_matrix = matrix(c(1,2,3,4,5,6), nrow =3, ncol =2)
+my_matrix1 = matrix(c(1,2,3,4,5,6), nrow = 2, ncol = 3, byrow = TRUE)
+print(my_matrix)
+print(my_matrix1)
+rownames(my_matrix1) = c('row1', 'row2')
+colnames(my_matrix1) = c('col1', 'col2', 'col3')
+str(my_matrix1)
+my_matrix[1,2]
+```
+```{r}
+ID = c('A', 'B', 'C')
+Age = c(21, 22, 20)
+Height = c(150, 160, 170)
+sData = data.frame(ID, Age, Height)
+sData
+```
+
+```{r}
+rownames(sData) = c('Ajith', 'John', 'Bob')
+colnames(sData) = c('ID', 'Age', 'Height')
+str(sData)
+```
+
+```{r}
+gender = factor(c('Male', 'Male', 'Female', 'Female'))
+print(gender)
+
+levels(gender)
+
+gender[1] = 'Female'
+print(gender)
+```
+
+```{r}
+foodData = read.csv('food-texture.csv', header = TRUE, row.names = 1, stringsAsFactors = FALSE)
+head(foodData)
+```
+```{r}
+dim(foodData)
+str(foodData)
+nrow(foodData)
+ncol(foodData)
+```
+
+```{r}
+mean(foodData$Density)
+```
+
+```{r}
+mean(foodData[['Density']])
+```
+
+```{r}
+apply(foodData,2,mean)
+```
+
+```{r}
+apply(foodData[c('Density', 'Oil') ], 2, mean)
+```
+
+```{r}
+library(ggplot2)
+```
+
+```{r}
+p1 = ggplot(data = foodData, aes(x = Oil, y = Density)) +
+ geom_point( color = 'blue')
+p1
+```
+
+```{r}
+data(cars)
+
+head(cars)
+# View(cars)
+str(cars)
+```
+
+
+
+```{r}
+library(ggstatsplot)
+```
+
+```{r}
+ggscatterstats(data = cars, x = speed, y = dist)
+```
+
+
+```{r}
+library(tidyverse)
+cor(cars$speed, cars$dist, method = ("pearson")) # Spearman or kendall
+```
+```{r}
+p2 = ggplot(data = cars, mapping = aes(x = speed)) +
+  geom_freqpoly(binwidth = 2.5,color = 'blue')
+p2
+```
+
+```{r}
+p3 = ggplot(data = cars, mapping = aes(x = speed)) +
+  geom_histogram(binwidth = 2.5,color = 'black', fill = 'red4')
+p3
+```
+```{r}
+ggplot(data = cars, aes(x = speed, y = dist)) +
+  geom_col(fill = 'blue4')
+```
+```{r}
+p = ggplot(data = foodData, aes(x = Oil, y = Density)) +
+ geom_point(color = 'blue', size = 5, shape = 1) + labs(x = 'Oil Content', y = 'Density of Snack', title = 'Oil vs. Density')
+p
+```
+
+```{r}
+file = 'mtcars.csv'
+carData= read.csv(file, header = TRUE, row.names = 1, stringsAsFactors = FALSE)
+head(carData)
+```
+```{r}
+ggplot(data = carData) +
+ geom_histogram(aes(x = mpg), binwidth = 2.5, color = 'black', fill = 'forestgreen')
+```
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+```
+
+```{r}
+data("mtcars")
+carData = mtcars
+head(carData)
+```
+
+```{r}
+carData %>% mutate(cyltype = 'High')
+
+```
+
+```{r}
+carData %>% mutate(cyltype = ifelse(cyl > 4, 'High', 'Low'))
+```
+
+```{r}
+carData.new = carData %>% mutate(cyltype = ifelse(cyl > 4, 'High', 'Low'), wtton = wt*0.45)
+carData.new
+```
+```{r}
+carData.new %>% summarize(mwtton = mean(wtton))
+```
+
+```{r}
+carData.new %>% summarize(mean(wtton), mean(disp))
+```
+
+```{r}
+carData.new %>% group_by(cyltype) %>% summarize(mean(wtton), mean(disp))
+```
+
+```{r}
+carData.new %>% filter(cyltype == 'Low')
+```
+```{r}
+carData.new %>% filter(cyl > 2 & am == 1)
+```
+```{r}
+carData.new %>% select(wtton)
+```
+```{r}
+carData.new %>% select (-wtton, -cyltype)
+```
+```{r}
+p = ggplot(data = carData.new, mapping = aes(x = wt, y = disp))+
+  geom_point( color = 'blue') + labs(x = "Weight", y= "Displacement", title = "Weight Vs Displacemet")
+p
+```
+```{r}
+# str(carData.new)
+categorical_col = c('gear', 'vs')
+carData.new[categorical_col] = lapply(carData.new[categorical_col], as.factor)
+p1 = ggplot(data = carData.new, mapping = aes(x = wt, y = disp, color = gear, shape = vs))+
+  geom_point()
+p1
+```
+```{r}
+data(mpg)
+data = mpg
+head(data)
+
+```
+
+
+```{r}
+ggplot(data = data, mapping = aes(x =displ, y = hwy, color = class, shape = drv))+
+  geom_point() + labs(x = 'Displacement', y = 'Highway', title = 'MPG VS Displacement')
+```
+```{r}
+ggplot(data = data) + geom_point(mapping = aes(x = displ, y = hwy, color = class)) +
+  facet_wrap(~class, nrow =2)
+
+```
+
+```{r}
+ggplot(data = data) + geom_point(mapping = aes(x = displ, y = hwy, color = class)) +
+  facet_grid(drv~cyl)
+```
+
+```{r}
+factor(data$cyl)
+```
+```{r}
+data %>% filter(cyl %in% (5))
+```
+```{r}
+data %>% filter(!(cyl %in% (5)))
+```
+```{r}
+ggplot(data = data)+
+  geom_point(mapping = aes(x = displ, y = hwy, color = cyl))
+```
+```{r}
+ggplot(data = data)+
+  geom_point(mapping = aes(x = displ, y = hwy, color = factor(cyl)))
+```
+
+```{r}
+ggplot(data = data)+
+  geom_point(mapping = aes(x = displ, y = hwy, color = factor(cyl), shape = class))
+```
+
+
+```{r}
+ggplot(data = data)+
+  geom_smooth(aes(x = displ, y = hwy))
+```
+
+```{r}
+ggplot(data = data)+
+  geom_smooth(mapping = aes(x = displ, y = hwy), se = FALSE)
+```
+
+
+```{r}
+ggplot(data = data)+
+  geom_smooth(mapping = aes(x = displ, y = hwy, linetype = drv), se = FALSE)
+```
+```{r}
+ggplot(data = data, mapping = aes(x = displ, y = hwy))+ geom_point(aes(color = factor(cyl))) +
+  geom_smooth(data = filter(data, class == 'subcompact'), se = FALSE)
+```
+
+```{r}
+ggplot(data = data)+
+  geom_bar(aes(x = cyl), fill = 'forestgreen')
+```
+```{r}
+ggplot(data = data)+
+  geom_boxplot(aes(x = factor(cyl), y = hwy), outlier.color = 'forestgreen', outlier.size = 4, outlier.shape = 8) 
+
+```
+
+
+```{r}
+df = data.frame(
+ gender = factor(rep(c("F", "M"), each = 200)),
+ height = round(c(rnorm(200, mean = 60, sd = 10), rnorm(200, mean = 70, sd = 6)))
+)
+
+head(df)
+```
+
+```{r}
+x = 4
+x > 5
+x == 5
+x < 5
+```
+
+```{r}
+l1 = c(TRUE, FALSE, FALSE, TRUE)
+l2 = c(TRUE, TRUE, FALSE, FALSE)
+
+l1&l2
+l1 | l2
+!(l1)
+!(l2)
+l1&&l2
+
+```
+
+```{r}
+names = c('Ajith', 'Priya', 'Gabriel')
+
+'Ajith' %in% names 
+!('Ajith' %in% names)
+```
+```{r}
+all(l1)
+any(l1)
+
+```
+```{r}
+l1 = c(TRUE, TRUE, NA, TRUE) 
+all(l1)
+isTRUE(l1)
+
+```
+
+```{r}
+x= c(1:4) 
+y= (x^1/2)^2
+x==y
+```
+```{r}
+print(x)
+print(y)
+```
+
+```{r}
+x = 8
+if (x %% 2 == 0 ) {
+  print('even')
+  }
+```
+```{r}
+x = 9
+if (x %% 2 != 0 ) {
+  print('odd')
+  }
+```
+```{r}
+if(10 > 30){
+  print('TRUE')
+} else {
+  print('FALSE')
+}
+```
+
+```{r}
+x = 0
+if ( x > 1 ) {
+print ('success') 
+} 
+if ( x < -1 ) { 
+print ('fail')
+} else {
+print( 'x is zero')
+}
+```
+```{r}
+x = 0
+if ( x > 0 ) {
+print ('positive') 
+} 
+if ( x < 0 ) { 
+print ('negative')
+} else {
+print( 'x is zero')
+}
+```
+```{r}
+x = c(1:10)
+ print(x)
+ ifelse(x %% 2 == 0, 'even', 'odd')
+```
+
+```{r}
+x = c(1:20)
+for(val in x){
+  y = x^2
+  print(y)
+}
+```
+```{r}
+x = c(1:20)
+for(i in 1:length(x)){
+  y[i]=x[i]^2
+  print(y[i])
+}
+```
+```{r}
+names = c('Ajith', 'Priya', 'Gabriel')
+print(names)
+ participants = c('Ajith','Priya','Gabriel')
+ for (names in participants) {
+ print(names)
+ }
+```
+```{r}
+x = 1
+while(x > 0.1){
+  x = runif(1)
+  print(x)
+}
+```
+
+```{r}
+
+```
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+dice = c(1:6)
+p = (1/6)*replicate(6,1)
+
+sample(dice, 1, replace= TRUE, prob = p)
+```
+```{r}
+dice = c(1:6)
+p = (1/6)*replicate(6,1)
+
+sample(dice, 2, replace= TRUE, prob = p)
+```
+
+```{r}
+dice = c(1:6)
+p = (1/6)* replicate(6,1)
+nsimulations = 10
+
+replicate(nsimulations, sample(dice, 2, replace = TRUE, prob = p))
+```
+
+```{r}
+dice = c(1:6)
+
+p = (1/6) * replicate(6, 1)
+
+nsimulations = 100
+
+simulateData = replicate(nsimulations, sample(dice, 2, replace = TRUE, prob = p))
+simulateData
+```
+```{r}
+checkEvent = function(data){
+  if(sum(data)>=7){
+    return(1)
+  } else{
+    return(0)
+  }
+    
+}
+print (simulateData)
+
+apply(simulateData, 2, checkEvent)
+```
+
+```{r}
+dice = c(1:6)
+
+p = (1/6)* replicate(6,1)
+
+nsimulations = 100000
+
+sData=replicate(nsimulations, sample(dice, 2, replace = TRUE, prob = p))
+
+```
+
+
+
+
+```{r}
+checkEvent = function(data){
+  if(sum(data)>7){
+    return(1)
+  } else{
+    return(0)
+  }
+}
+print(sData)
+
+apply(sData, 2, checkEvent)
+```
+
+
+```{r}
+checkEvent = function(data){
+  if(sum(data)>7){
+    return(1)
+  } else{
+    return(0)
+  }
+}
+# print(sData)
+
+mean(apply(sData, 2, checkEvent))
+```
+```{r}
+dice = c(1:6)
+
+p = (1/6) * replicate(6, 1)
+
+nsimulations = 1000000
+
+simulateData = replicate(nsimulations, sample(dice, 2, replace = TRUE, prob = p))
+
+```
+
+```{r}
+checkEvent = function(data){
+  if(data[1] %% 2 == 0) {
+    return(1) 
+  } else {
+    return(0)
+  }
+}
+
+mean(apply(simulateData, 2, checkEvent))
+```
+```{r}
+n = 10
+p = 0.6
+nsimulation = 10
+
+simulateData = rbinom(nsimulation, n, p)
+
+print(x)
+```
+
+```{r}
+n = 10
+p = 0.6
+nsimulations = 1e05
+simulatedData = rbinom(nsimulations, n, p)
+df = as.data.frame(table(simulatedData))
+colnames(df) = c("Value","Frequency")
+head(df)
+```
+
+```{r}
+n = 10
+p = 0.6
+nsimulation = 100000
+
+simulateData = rbinom(nsimulation, n, p)
+
+df = as.data.frame(table(simulateData))
+colnames(df) = c ('value', 'frequency')
+df
+```
+```{r}
+ggplot(data = df) +
+  geom_col(mapping = aes(x = value, y = frequency), width = 0.7, color = 'black', fill = 'blue4')+
+  labs( x = 'Values', y = 'Frequency') + ggtitle('GVisualization of a Binomial Random Variable')
+```
+
+```{r}
+rpois(100, lambda = 10)
+```
+
+```{r}
+mu = 170
+sigma = 8
+nsimulations = 10
+rnorm(nsimulations, mean = mu, sd = sigma)
+```
+```{r}
+mu = 170
+sigma = 8
+nsimulations = 10
+simulatedData=rnorm(nsimulations, mean = mu, sd = sigma)
+df = as.data.frame(simulatedData)
+colnames(df) = 'Height'
+head(df)
+```
+
+
+```{r}
+mu=170
+sigma = 8 
+nsimulations = 1e5 
+simulatedData = rnorm(nsimulations, mean = mu, sd=sigma )
+df = as.data.frame(simulatedData)
+colnames(df) = 'Height'
+head(df)
+(df['Height'] >= 170) & (df['Height'] <=171)
+```
+```{r}
+mu=170
+sigma = 8 
+nsimulations = 1e5 
+simulatedData = rnorm(nsimulations, mean = mu, sd=sigma )
+df = as.data.frame(simulatedData)
+colnames(df) = 'Height'
+mean((df['Height'] >= 170) & (df['Height'] <=171))
+```
+
+```{r}
+delta = 2
+p1 = ggplot(df) +
+ geom_histogram(aes(x=Height, y = ..count..), breaks = seq(mu-4*sigma, mu+4*sigma, 
+by=delta), color = 'black', fill= 'forestgreen') + 
+ labs (x='Height', y= 'Count' )
+p1
+```
+```{r}
+
+```
+
