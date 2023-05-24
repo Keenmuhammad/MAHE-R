@@ -129,6 +129,6 @@ shapiro.test(x = aov_residuals)
 
 # no violation of normality assumption as p value is insignificant
 # the kruskal-wallis rank-sum test is a non-parametric alternative
-# to one way ANOVA that cam b employed  when the ANOVA assumptions are not met
+# to one way ANOVA that cam b employed  when the ANOVA assumptions are not met.
 
 kruskal.test(weight ~ group, data = pdata)
