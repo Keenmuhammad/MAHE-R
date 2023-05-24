@@ -28,7 +28,7 @@ str(data)
 table(data$supp, data$dose)
 
 # we have 2x3 design cells each with 10 observations, we have a well balanced 
-# design
+# design.
 
 ggboxplot(data, x ="dose", y = "len", color = "supp",
           palette = c("hotpink", "cyan4"))
