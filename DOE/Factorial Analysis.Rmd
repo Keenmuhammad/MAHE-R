@@ -1,0 +1,228 @@
+---
+title: "Factorial Design"
+author: "Moh"
+date: "2023-07-08"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#FACTORIAL DESIGNS IN R: TUTORIAL
+
+# Note: Package: “car”, “emmeans” to be installed prior to running the 
+# following code.
+
+# Case 2: Tooth Growth in R
+# call an in-built dataset in R
+
+The response is the length of odontoblasts (cells responsible for tooth growth) in 60 guinea pigs. Each animal received one of three dose 
+levels of vitamin C (0.5, 1, and 2 mg/day) by one of two delivery 
+methods, orange juice or ascorbic acid (a form of vitamin C and coded 
+as VC).
+
+A 2×3 factorial design is a type of experimental design that allows 
+researchers to understand the effects of two independent variables on a single dependent variable. In this type of design, one independent 
+variable has two levels and the other independent variable has three 
+levels.
+
+```{r}
+attach(ToothGrowth)
+ToothGrowth
+
+```
+```{r}
+help("ToothGrowth")
+```
+
+```{r}
+str(ToothGrowth)
+```
+
+```{r}
+require(graphics)
+coplot(len ~ dose | supp, data = ToothGrowth, panel = panel.smooth,
+       xlab = "ToothGrowth data: length vs dose, given type of supplement")
+```
+
+```{r}
+summary(ToothGrowth)
+```
+```{r}
+ToothGrowth$dose = factor(ToothGrowth$dose, levels=c(0.5,1.0,2.0), labels=c("low","med","high"))
+str(ToothGrowth)
+
+```
+
+
+```{r}
+table(ToothGrowth$supp, ToothGrowth$dose)
+```
+
+```{r}
+boxplot(len ~ supp, data = ToothGrowth, ylab = 'Tooth Length', main = 'Box plot of Tooth Growth Data', col = 'steelblue')
+```
+
+```{r}
+boxplot(len ~ dose, data=ToothGrowth, ylab="Tooth Length", main="Boxplots of Tooth Growth Data")
+```
+
+```{r}
+boxplot(len ~ supp * dose, data = ToothGrowth, ylab = 'Tooth Length', main = 'Boxplots of Tooth Growth Data')
+```
+
+```{r}
+with(ToothGrowth,interaction.plot(x.factor=dose, trace.factor=supp, response=len, fun=mean, type="b",legend=T, ylab="Tooth Length", main="Interaction Plot",pch=c(1,19)))
+# An interaction plot that helps see change in dose accross two levels of supplement withb the 
+# response variable beign length. The dot represents  mean values
+```
+There seems to be no difference between supp at high dose
+There seems to be a main effect of dose – higher dose results in 
+higher tooth length
+There doesn’t seem to be much of a main effect of supp – there is 
+less difference between the 2 groups overall.
+
+```{r}
+# Normality Assumption Check. Try some statistical test as assignment.
+hist(ToothGrowth$len)
+```
+
+
+```{r}
+densityplot(ToothGrowth$len)
+```
+```{r}
+library(e1071)
+library(ggplot2)
+library(graphics)
+library(lattice)
+require(stats)
+```
+```{r}
+with(ToothGrowth, tapply(len, list(supp,dose), mean))
+```
+```{r}
+with(ToothGrowth, tapply(len, list(supp,dose), sd))
+```
+# Use Type I Sums of Squares are Sequential, so the order of variables in the models makes a difference.
+# Use Type II when there is no interaction, and
+# Use Type III when there is interaction
+
+# Suggested Reading: https://towardsdatascience.com/anovas-three-types-of-estimating-sums-of-squares-don-t-make-the-wrong-choice-91107c77a27a
+
+```{r}
+# Homogeneity of Variance Assumption check
+
+# options(show.signif.stars=F)
+ bartlett.test(len ~ interaction(supp,dose), data=ToothGrowth)
+
+```
+```{r}
+
+```
+
+```{r}
+bartlett.test(len~as.factor(supp), data=ToothGrowth)
+```
+
+```{r}
+bartlett.test(len~as.factor(dose), data=ToothGrowth)
+```
+
+```{r}
+library(car)
+library(emmeans)
+```
+```{r}
+fit = lm(len = supp + dose + supp : dose, data = ToothGrowth)
+# fit = lm(len ~ supp+dose+supp*dose, data=ToothGrowth)
+```
+```{r}
+aov.out2 = Anova(fit, data=ToothGrowth,type=3)
+aov.out2
+```
+```{r}
+# options(show.signif.stars= F) to off stars in results
+# options(show.signif.stars= T) to off stars
+aov.out2 = Anova(lm(len ~ supp+dose+supp*dose), data=ToothGrowth,type=3)
+aov.out2
+```
+```{r}
+marginal = emmeans(fit,~dose)
+```
+
+```{r}
+pairs(marginal,adjust="tukey")
+```
+```{r}
+marginal = emmeans(fit,~ supp)
+pairs(marginal,adjust="tukey")
+
+```
+```{r}
+marginal = emmeans(fit,~ supp:dose)
+pairs(marginal,adjust="tukey")
+
+```
+```{r}
+fit
+```
+```{r}
+summary(fit)
+```
+
+```{r}
+gog <-as.data.frame(read.csv(file.choose()))
+```
+
+
+```{r}
+attach(gog)
+```
+
+
+```{r}
+table(gender,alcohol)
+```
+
+```{r}
+gog$gender = factor(gog$gender, levels=c("Female", "Male"))
+gog$alcohol= factor(gog$alcohol, levels=c("No", "Yes"))
+str(gog)
+
+```
+
+```{r}
+summary(gog)
+```
+```{r}
+boxplot(attractiveness ~ gender * alcohol, data=gog, ylab="Attractiveness", main="Boxplots of Goggles Data")
+```
+```{r}
+with(gog,interaction.plot(x.factor=gender, trace.factor=alcohol, response=attractiveness, fun=mean, type="b",legend=T, ylab="Attractiveness", main="Interaction Plot",pch=c(1,19)))
+```
+```{r}
+bartlett.test(attractiveness ~ interaction(gender, alcohol), data=gog)
+```
+```{r}
+fit = lm((attractiveness ~ gender+alcohol+gender*alcohol), data = gog)
+```
+
+```{r}
+#aov.out2 = Anova(lm(attractiveness ~ gender+alcohol+gender*alcohol), 
+#data= gog,type=3)
+#aov.out2
+aov.out2 = Anova(fit, data=gog,type=3)
+aov.out2
+
+```
+```{r}
+fit2 = lm(attractiveness ~ gender+alcohol+gender*alcohol)
+```
+
+```{r}
+marginal = emmeans(fit2,~ gender:alcohol)
+pairs(marginal,adjust="tukey")
+```
+

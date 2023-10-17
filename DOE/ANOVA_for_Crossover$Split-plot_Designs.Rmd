@@ -1,0 +1,109 @@
+---
+author: "Moh"
+date: "2023-08-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# ANOVA FOR SPLIT-PLOT DESIGN
+# Dataset 1: oats from MASS package in R
+The yield of oats from a split-plot field trial using three varieties and four levels of manurial treatment. The experiment was laid out in 6 blocks of 3 main plots, each split into 4 sub-plots. The varieties were applied to the main plots and the manurial treatments to the sub-plots.
+
+* A whole-plot is given by a plot of land in a block.
+* The whole-plot factor is variety.
+* A block design (RCB) was used at the whole-plot level.
+* A split plot is given by a subplot of land.
+* The split-plot factor is given by nitrogen treatment
+
+
+```{r}
+library(MASS)
+oats<-data.frame(oats)
+str(oats)
+View(oats)
+```
+
+```{r}
+summary(oats)
+```
+
+```{r}
+sd(oats$Y)
+```
+```{r}
+IQR(oats$Y)
+```
+
+```{r}
+attach(oats)
+boxplot(Y~B)
+
+
+```
+
+```{r}
+boxplot(Y~V)
+```
+
+
+```{r}
+boxplot(Y~B+V)
+```
+
+# In R we use the lmer function with an extra random effect (error) per 
+# combination of block and variety.
+```{r}
+library(lme4) # for split-plot ANOVA
+library(afex) # for p-values
+fit.lme<-lmer(Y~B+V*N+(1|B:V), data=oats)
+anova(fit.lme)
+
+```
+
+# R TUTORIAL: ANOVA FOR CROSS-OVER DESIGN
+
+```{r}
+library(nlme)
+data1<-data.frame(read.csv("COD2.csv", header = TRUE))
+attach(data1)
+str(data1)
+
+```
+
+
+```{r}
+summary(data1)
+```
+
+
+```{r}
+boxplot(response~treatment)
+```
+
+
+```{r}
+boxplot(response~period)
+```
+
+
+```{r}
+boxplot(response~seq)
+```
+
+```{r}
+L2 <- lme(response ~ period + seq + treatment,random=~1|sub_id,data=data1)
+summary(L2)
+```
+
+
+```{r}
+anova(L2)
+```
+
+
+```{r}
+
+```
+

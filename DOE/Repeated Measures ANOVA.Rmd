@@ -1,0 +1,125 @@
+---
+title: "Repeated Measures ANOVA"
+author: "Moh"
+date: "2023-08-15"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(datarium)
+```
+
+
+```{r}
+data("selfesteem")
+selfesteem
+```
+
+```{r}
+head(selfesteem)
+str(selfesteem)
+summary(selfesteem)
+
+```
+
+```{r}
+sapply(selfesteem[,-1],sd)
+```
+
+```{r}
+sapply(selfesteem[,-1],IQR)
+
+```
+
+```{r}
+boxplot(selfesteem[,-1])
+```
+```{r}
+for(i in 2:4)
+{
+print(shapiro.test(selfesteem[,i]))
+}
+```
+
+```{r}
+library(rstatix)
+# please install this library to implement the test of sphericity
+score=c(selfesteem$t1,selfesteem$t2,selfesteem$t3)
+id=rep(1:10,3)
+time=c(rep(1,10),rep(2,10),rep(3,10))
+se<-data.frame(score,id,time)
+se
+```
+
+```{r}
+str(se)
+
+```
+
+```{r}
+attach(se)
+res.aov <- anova_test(data = se, dv = score, wid = id, within = time)
+res.aov$`Mauchly's Test for Sphericity`
+```
+
+```{r}
+get_anova_table(res.aov)
+
+```
+
+```{r}
+pairwise_t_test(se, score ~ time, paired = TRUE, p.adjust.method = "bonferroni")
+```
+
+
+```{r}
+as.data.frame(selfesteem2)
+```
+
+```{r}
+summary(selfesteem2[,-1])
+```
+```{r}
+id=rep(selfesteem2$id, 3)
+trt=rep(selfesteem2$treatment,3)
+score=c(selfesteem2$t1,selfesteem2$t2,selfesteem2$t3)
+time=c(rep(1,24),rep(2,24),rep(3,24))
+se2=data.frame(id,trt,score,time)
+se2
+
+```
+
+
+```{r}
+boxplot(se2$score~se2$trt+as.factor(se2$time))
+```
+
+```{r}
+res.aov2 <- anova_test(data = se2, dv = score, wid = id, within = c(time, trt))
+res.aov2$`Mauchly's Test for Sphericity`
+```
+
+```{r}
+get_anova_table(res.aov2)
+
+```
+
+```{r}
+get_anova_table(res.aov2)
+
+```
+
+```{r}
+pairwise_t_test(se2, score ~ time, paired = TRUE, p.adjust.method = 
+"bonferroni")
+```
+
+```{r}
+pairwise_t_test(se2, score ~ trt, paired = TRUE, p.adjust.method = 
+"bonferroni")
+```
+
