@@ -1,0 +1,112 @@
+---
+title: "Applied Multivariate Data Analysis Assignment"
+author: "Muhammad"
+date: "2023-07-13"
+output:
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE,message = FALSE)
+```
+
+
+```{r loading the packages}
+library(psych)
+library(MVA)
+```
+
+
+# Question 1
+
+#### 1.	Dataset “trees” has three measurements on each of 31 black cherry trees: Girth (diameter in inches), height in feet, and volume in cubic feet. The data can be imported using the function: data("trees")
+
+### a). Using the pairs function, draw the pairwise scatter plot in R to identify strong correlation and any outliers.
+
+ 
+
+```{r loading data}
+data("trees")
+```
+
+
+```{r pairwise scatterplot}
+pairs(trees)
+```
+
+### b). Perform a principal component analysis of this data in R. Use the biplot to show the first principal component captures the strong correlation. Interpretate the results using scree plot.
+
+
+```{r KMO test}
+KMO(trees)
+```
+
+```{r Bartletts sphericity test}
+cortest.bartlett(trees)
+```
+```{r principal component analysis}
+pca_trees = princomp(trees)
+summary(pca_trees, loadings = TRUE)
+
+```
+```{r loadings of the PCA}
+loadings(pca_trees)
+```
+
+
+```{r biplot of the PCA}
+biplot(pca_trees, cex = 0.5)
+
+```
+
+
+```{r screeplot of the PCA}
+plot= screeplot(pca_trees, type = "line", main="Scree plot")
+```
+
+* From the above scree plot we can take  principle component 1 and principle component two for our analysis, this is because principle component 1 and 2 are lying beneath the elbow point of the scree plot. We con ignore principle component 3 because it is greater than the elbow point.
+
+* Going by the social science threshold, the results from the PCA analysis also suggests that the first two components be used for the analysis as the have covered over 60 percent of the variability.
+
+* The biplot result also suggest bthe use of the first and second component
+
+
+# Question 2
+
+### 2.	Iris data set gives the measurements in centimeters of the variables, sepal length and width and petal length and width, respectively, for 50 flowers from each of 3 species of iris. The species are Iris setosa, versicolor, and virginica. The data can be imported using the function: data("iris"). Calculate distance matrix. Perform hierarchical agglomerative clustering using average linkage method. 
+
+
+```{r loading iris data}
+data("iris")
+# View(iris)
+```
+
+
+```{r normalizing the data (I)}
+data = iris [-c(5)]
+# data
+
+```
+
+```{r normalizing the data (II)}
+means = apply(data , 2, mean)
+stddev = apply(data, 2, sd)
+nor = scale(data, center = means, scale = stddev)
+# View(nor)
+```
+
+
+```{r the distance matrix}
+distance_matrix = dist(nor)
+print (distance_matrix)
+```
+
+
+
+
+```{r heirarchical agglomerative clustering using average linkage method}
+data.hclust = hclust(distance_matrix, method = "average")
+plot(data.hclust, cex = 0.3)
+```
+
+
