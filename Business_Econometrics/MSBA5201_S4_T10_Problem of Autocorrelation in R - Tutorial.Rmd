@@ -1,0 +1,210 @@
+---
+title: "Autocorrelation Tutorial in R"
+author: "Bidyut Ghosh"
+date: "`r Sys.Date()`"
+output: slidy_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,comment = NA,warning = FALSE,message = FALSE)
+```
+
+
+# Statement of the Problem: US consumption function, 1947–2000
+
+We have data on real consumption expenditure $(C)$, real disposable personal income $(DPI)$, real wealth $(W)$ and real interest rate $(R)$ for the USA for the years 1947–2000.
+
+The data is available in Excel format (Table 6.1.xls).
+
+We start with the regression model with an aim to estimate the consumption function for the US economy:
+
+$$ ln(C_t) =\beta_1+\beta_2 ln (DPI_t)+ \beta_3ln (W_t)+\beta_4 R_t +u_t$$
+
+
+- $\beta_2$  - elasticities of consumption expenditure with respect to disposable income
+
+- $\beta_3$- elasticities of consumption expenditure with respect to wealth
+
+- $\beta_4$ - semi-elasticity with respect to real interest rate 
+
+A priori, we expect:
+
+$$ \begin {aligned}\beta_2 >0\\\beta_3>0\\\beta_4<0  \end {aligned} $$
+
+# Import the data
+
+```{r}
+library(readxl)
+table6_1<-read_excel("Table6_1.xls")
+head(table6_1)
+```
+
+# Estimation of Model
+
+
+```{r}
+model1<-lm(lnconsump~lndpi+lnwealth+rinterest,data = table6_1)
+summary(model1)
+```
+
+# Tests for Autocorrelation
+
+- Graphical Method
+- Durbin-Watson $d$ Statistic
+- Breusch-Godfrey Test
+
+# Graphical Method
+
+```{r}
+plot(model1$residuals, type = "l")
+```
+
+
+
+```{r}
+library(astsa)
+lag1.plot(model1$residuals,1)
+```
+
+# Durbin Watson Test
+
+
+```{r}
+library(car)
+durbinWatsonTest(model1)
+```
+
+$$n = 54\\ X \text{(number of regressors)} =3$$
+
+The 5% critical $d$ values for this combination are: $(1.452, 1.681)$. 
+
+
+# B-G Test
+
+
+```{r}
+library(lmtest)
+bgtest(model1, order = 1, type = "F")
+```
+```{r}
+bgtest(model1, order = 2, type = "F")
+
+```
+
+```{r}
+bgtest(model1, order = 3, type = "F")
+```
+
+
+# Remedial Measures
+
+- First-difference transformation
+- Generalized transformation
+- Newey–West method of correcting OLS standard errors
+
+
+# First-difference transformation
+
+Suppose autocorrelation is of $AR(1)$ type, which we can write as:
+
+$$ u_t-\rho u_{t-1}=v_t $$
+
+So, we can transform the original regression model as:
+
+
+$$ ln(C_t) =\beta_1+\beta_2 ln (DPI_t)+ \beta_3ln (W_t)+\beta_4 R_t +u_t$$
+
+
+$$ ln(C_t)-\rho ln(C_{t-1}) =\beta_1(1-\rho)+\beta_2 (ln (DPI_t)-\rho ln(DPI_{t-1}))+ \beta_3(ln (W_t)-\rho ln(W_{t-1}))+\beta_4 (R_t-\rho R_{t-1}) +(u_t-\rho u_{t-1})$$
+
+If the series is highly inter correlated, $\rho \approx 1$, then we can have:
+
+$$ \Delta ln C_t=\beta_2 \Delta ln DPI_t+\beta_3 \Delta ln W_t+\beta_4 \Delta R_t+v_t  \implies \text {First Difference Transformation}  $$
+
+```{r}
+model2<-lm(diff(lnconsump)~0+diff(lndpi)+diff(lnwealth)+diff(rinterest),data = table6_1)
+summary(model2)
+```
+
+
+```{r}
+durbinWatsonTest(model2)
+```
+
+```{r}
+bgtest(model2, order = 1)
+```
+```{r}
+bgtest(model2, order = 2)
+```
+
+```{r}
+bgtest(model2, order = 3)
+```
+
+# Generalized transformation
+
+Since it will be a waste of time to try several values of $\rho$ to transform the original model,
+we may proceed somewhat analytically.
+
+For instance, if the $AR(1)$ assumption is appropriate, we can use:
+
+$$\hat u_t=\rho \hat u_{t-1}+\epsilon_t$$
+
+Then the estimate of $\rho$, that is, $\hat\rho$ can be used to transform the original model.
+
+The estimates of the parameters thus obtained are known as **feasible generalized least squares (FGLS)** estimators.
+
+```{r}
+library(dplyr)
+mydata<-data.frame(model1$residuals)
+mydata$model1.residuals_1<-lag(mydata$model1.residuals,1)
+head(mydata)
+model3<-lm(model1.residuals~0+model1.residuals_1,data = mydata)
+model3
+```
+So, $\hat\rho=0.499$
+
+Another method of obtaining an estimate of $\rho$, especially in large samples, is to use
+the relationship between $\rho$ and Durbin–Watson $d$:
+
+$$ \rho \approx 1-\frac d 2 $$
+
+$$ \hat\rho=1-\frac {0.962}{2}= 0.519 $$
+
+```{r}
+table6_1$lnconsump_t<-table6_1$lnconsump-0.519*lag(table6_1$lnconsump,1)
+table6_1$lndpi_t<-table6_1$lndpi-0.519*lag(table6_1$lndpi,1)
+table6_1$lnwealth_t<-table6_1$lnwealth-0.519*lag(table6_1$lnwealth,1)
+table6_1$rinterest_t<-table6_1$rinterest-0.519*lag(table6_1$rinterest,1)
+```
+
+
+```{r}
+model4<-lm(lnconsump_t~lndpi_t+lnwealth_t+rinterest_t,data = table6_1)
+summary(model4)
+```
+
+```{r}
+durbinWatsonTest(model4)
+```
+
+# The Newey–West method of correcting OLS standard errors
+
+
+- All the methods of searching for autocorrelation coefficient(s) discussed thus far are
+essentially trial and error methods. The success rate essentially depends on the nature of the problem and on the sample size.
+
+- But if the sample size is large (technically infinite), one can estimate an OLS regression in the usual manner but correct the standard errors of the estimated coefficients, by a method developed by Newey and West.
+
+- The standard errors corrected by their procedure are also known as HAC (heteroscedasticity and autocorrelation consistent) standard errors. Generally speaking, if there is autocorrelation, the HAC standard errors are found to be larger than the usual OLS standard errors.
+
+```{r}
+library(sandwich)
+coeftest(model1, vcov. = NeweyWest(model1))
+```
+
+```{r}
+coeftest(model1)
+```
+

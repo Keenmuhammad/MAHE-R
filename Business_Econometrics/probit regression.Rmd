@@ -1,0 +1,55 @@
+---
+title: "Probit Regression"
+author: "Moh"
+date: "2023-08-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Estimation for Ungrouped Data
+
+```{r}
+prakash<-read.csv("prakash.csv"
+,header = TRUE)
+model3<-glm(Renewed~Complaints+Subscriber.Tenure, family = binomial(link="probit"),data = prakash)
+summary(model3)
+```
+
+
+## Interpretation
+
+```{r}
+library(stargazer)
+stargazer(model1, model2, model3, type = "text", style = "all")
+```
+
+## Checking Model Fit Criteria
+
+```{r}
+probit_null<-glm(Renewed~1, family = binomial(link = "probit"),data = prakash)
+anova(probit_null,model3, test = "LRT")
+```
+
+## Checking Model Fit Criteria
+```{r}
+countR2<-function(m) mean(m$y==round(m$fitted.values))
+countR2(model3)
+```
+##Prediction Using Probit Model
+
+
+```{r}
+mydata<-data.frame(ID=seq(1:3),Complaints=c(3,12,10),Subscriber.Tenure=c(14,4,5))
+mydata
+
+
+```
+
+```{r}
+predict(model3, newdata=mydata, type="response")
+```
+

@@ -1,0 +1,198 @@
+---
+title: "Heteroscedasticity Practical in R"
+author: |
+  | Bidyut Kumar Ghosh
+  | Department of Commerce
+  | Manipal Academy of Higher Education
+  | email: bidyut.ghosh@manipal.edu
+date: "`r format(Sys.time(), '%A, %B %d, %Y, %X')`"
+output: slidy_presentation
+
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,comment = NA, warning = FALSE,message = FALSE)
+```
+
+# Data Description
+
+```{r, echo=FALSE}
+htmltools::img(src = "logo1.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;')
+```
+
+The file 'houseprice.xls' contains house price data from of a sample of 88 London houses together with some of their characteristics. 
+
+The variables are:
+
+1. Price = the price of the houses measured in pounds
+2. Rooms = the number of bedrooms in each house
+3. Sqfeet = the size of the house measured in square feet
+
+We want to see whether the number of bedrooms and the size of the house play an important role in determining the price of each house.
+
+$$ price=\beta_1+\beta_2 rooms+\beta_3 sqfeet+u $$
+
+# Data Import
+
+```{r, echo=FALSE}
+htmltools::img(src = "logo1.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;')
+```
+
+
+
+```{r}
+library(readxl)
+houseprice<-read_excel("houseprice.xls",range = cell_cols("A:J"))
+head(houseprice)
+```
+
+# Data Visualisation
+
+```{r, echo=FALSE}
+htmltools::img(src = "logo1.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;')
+```
+
+
+
+```{r}
+library(ggplot2)
+ggplot(houseprice,aes(sqrft,price))+geom_point(col="red")
+```
+
+```{r}
+ggplot(houseprice,aes(bdrms,price))+geom_point(col="red")
+```
+
+# Model Estimation
+
+
+```{r, echo=FALSE}
+htmltools::img(src = "logo1.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;')
+```
+
+
+
+```{r}
+model1<-lm(price~sqrft+bdrms,data = houseprice)
+summary(model1)
+```
+
+# Diagnostic Checking Using Plot function
+
+```{r, echo=FALSE}
+htmltools::img(src = "logo1.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;')
+```
+
+
+
+```{r}
+plot(model1)
+```
+
+# Formal Tests for Heteroscedasticity
+
+- Breusch-Pagan test
+
+```{r, echo=FALSE}
+htmltools::img(src = "logo1.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;')
+```
+
+
+
+```{r}
+library(lmtest)
+bptest(model1,  studentize = F)
+```
+- White's test
+
+
+```{r}
+bptest(model1,~bdrms*sqrft+I(bdrms^2)+I(sqrft^2), data = houseprice,studentize = F)
+```
+
+# Solving Heteroscedasticity (White's Method)
+
+```{r, echo=FALSE}
+htmltools::img(src = "logo1.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;')
+```
+
+
+
+```{r}
+library(sandwich)
+coeftest(model1, vcov. = vcovHC(model1, type = "HC0"))
+```
+
+```{r}
+coeftest(model1)
+```
+
+
+# Sovle for Heteroscedasticity (weighted least squares)
+
+```{r, echo=FALSE}
+htmltools::img(src = "logo1.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;')
+```
+
+
+Assuming that the variable causing the heteroskedasticity is the $sqfeet$ variable (or in mathematical notation assuming that):
+
+$$ Var(u_i) = σ_i^2 = σ^ 2* sqfeet $$
+
+Then we can use $\frac {1}{\sqrt {sqfeet}}$ as the weight.
+
+
+
+```{r}
+model2<-lm(price~sqrft+bdrms, data = houseprice, weights = 1/sqrt(sqrft))
+summary(model2)
+```
+
+```{r}
+plot(model2)
+```
+
+
+# Solve for Heteroscedasticity (by Log transformation)
+
+
+$$  log(price)=\beta_1+\beta_2 rooms+\beta_3 log(sqfeet)+u  $$
+
+
+```{r}
+model3<-lm(log(price)~bdrms+log(sqrft),data = houseprice)
+summary(model3)
+```
+
+```{r}
+plot(model3)
+```
+
+```{r}
+library(lmtest)
+bptest(model3)
+```
+
+```{r}
+bptest(model3,~bdrms*sqrft+I(bdrms^2)+I(sqrft^2), data = houseprice)
+```
+

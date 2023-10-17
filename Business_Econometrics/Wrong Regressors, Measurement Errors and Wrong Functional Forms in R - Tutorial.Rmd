@@ -1,0 +1,637 @@
+---
+title: "Model Misspecification: Wrong Regressors, Measurement Errors and Wrong Functional Forms"
+author: "Bidyut Ghosh"
+date: "`r format(Sys.time(), '%A, %B %d, %Y, %X')`"
+output:
+  slidy_presentation:
+    incremental: true
+
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, error = TRUE,comment = NA, warning = FALSE,message = FALSE)
+```
+
+# Introduction 
+
+```{r, echo=FALSE}
+htmltools::img(src = "logo.resized.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;')
+```
+
+- One of the assumptions of the classical linear regression model (CLRM) is that the model used in analysis is ‘correctly specified’.
+
+- A regression model tries to capture the main features of an socio-economic phenomenon, taking into account the underlying theoretical framework, prior empirical work, intuition, and research skills. 
+
+- If we want to take into account every single factor that affects a particular object of research, the model will be so unwieldy as to be of little practical use. 
+
+
+- By correct specification we mean one or more of the following:   
+    i. The model does not exclude any ‘core’ variables.  
+    ii. The model does not include superfluous variables.  
+    iii. The functional form of the model is suitably chosen.  
+    iv. There are no errors of measurement in the regressand and regressors.  
+    v. Outliers in the data, if any, are taken into account.  
+    vi. The probability distribution of the error term is well specified.  
+    vii. What happens if the regressors are stochastic?  
+    viii. The Simultaneous Equation Problem: the simultaneity bias.  
+
+- We will discuss the consequences of what happens if one or more of the specification errors are committed, how can it be  detected, and possible remedial measures.
+
+
+
+# Consequences of Core Variable Omission: Underfitting Model
+
+```{r, echo=FALSE}
+htmltools::img(src = "logo.resized.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;')
+```
+
+- Sometimes we are forced to omit some important variables from the model specification either
+  + because of lack of data availability, or 
+  + because of not proper conceptualization of the underlying  theory, or 
+  + because of not conducting prior research in the area thoroughly, or 
+  + simply because of carelessness. 
+  
+- Whatever be the reasons, the situation is called under-fitting a model.
+
+- The omission of important or 'core' variables has the following consequences:
+
+  i. If the left-out, or omitted, variables are correlated with the variables included in the model, the coefficients of the estimated model are biased. Not only that, the bias does not disappear as the sample size gets larger. In other words, the estimated coefficients of the missspecified model are biased as well as inconsistent.
+  
+  ii. Even if the incorrectly excluded variables are not correlated with the variables included in the model, the intercept of the estimated model is biased. 
+  
+  iii. The disturbance variance $\sigma_u^2$ is incorrectly estimated.
+  
+  iv. The variances of the estimated coefficients of the misspecified model are biased. As a result, the estimated standard errors are also biased. 
+  
+  v. In consequence, the usual confidence intervals and hypothesis-testing procedures become suspect, leading to misleading conclusions about the statistical significance of the estimated parameters. 
+  
+  vi. Furthermore, forecasts based on the incorrect model and the forecast confidence intervals based on it will be unreliable.
+  
+- Thus, for the above listed serious consequences, it is likely to avoid such situation of variable omission from the model framework.
+
+- Now the problem is that if we know the 'true' or 'correct' model, then we can compare the estimates of 'true' model and misspecified model. So this raises the question of what is the 'correctly specified' model? 
+
+
+
+# Tests for Omitted Variables and Incorrect Functional Form
+
+```{r, echo=FALSE}
+htmltools::img(src = "logo.resized.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;')
+```
+
+
+- For testing the error of omission of 'core' variables and incorrect functional forms, we can rely on the following methods:
+
+i. Examination of Residuals  
+ii. Durbin-Watson $d$ statistic  
+iii. Ramsey's RESET test  
+iv. Lagrange Multiplier (LM) Test  
+
+
+# Residuals Examination
+
+```{r, echo=FALSE}
+htmltools::img(src = "logo.resized.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;')
+```
+
+- A proper visual examination of model residuals can help us in detecting the presence of autocorrelation and heteroscedasticity problems. 
+
+- These residuals can also be used for detecting the model specification error, especially the omission of 'core' variables. If the residual plot exhibits any specific pattern, there may be a specification error.
+
+
+
+# Durbin-Watson $d$ statistic
+
+```{r, echo=FALSE}
+htmltools::img(src = "logo.resized.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;')
+```
+
+
+- Durbin-Watson $d$ statistic is routinely calculated for all regression analysis and is widely used for detecting first-order serial correlation in residuals of the model. 
+
+- Another use of $d$ statistic is the detection of model specification errors. If there is found any positive 'correlation' in the residuals when we fit the linear or quadratic model, this is not a measure of (first-order) serial correlation but of model specification errors. The observed correlation simply reflects the fact that some variable(s) that belongs in the model is included in the error term and needs to be separated from it and introduced in its own right as an explanatory variable. 
+
+# Ramsey's RESET Test
+
+```{r, echo=FALSE}
+htmltools::img(src = "logo.resized.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;')
+```
+
+
+Ramsey has suggested a general test of specification error called RESET (regression specification error test).  For a two variable model (Cost function):
+
+$$ \begin {aligned} Y_i&=\beta_0 + \beta_1 X_i + u_i \\Y&= \text {the total cost of production}\\ X & =\text {output level} \end {aligned} ~~~~~~...(A)$$
+
+The dataset is given in Excel format ("cost.xls").
+
+---
+
+```{r,include=TRUE,comment=NA}
+library(readxl)
+mydata=read_excel(path = "cost.xls", sheet="Table 7_4" ,skip = 6, col_names = T)
+head(mydata)
+attach(mydata)
+plot(X,Y, type = "l", main = "Total Cost Curve", xlab = "Output level", ylab = "Total Cost")
+```
+
+
+```{r}
+  model1<-lm(Y ~ X)
+  summary(model1)
+```
+
+```{r}
+plot(X,Y, type = "l", main = "Total Cost Curve", xlab = "Output level", ylab = "Total Cost")
+abline(lm(Y~X,data = mydata),col="red")
+
+```
+
+```{r}
+plot(model1, which = 1:1)
+```
+
+
+- Though the sum of residuals is zero, it shows a systematic pattern of movement with the fitted $Y$ values, which in turn implies that if $\widehat Y$ is included in the model as a regressor, it would certainly increase the value of $R^2$.
+
+- Now if the increase in the value of $R^2$ is statistically significant, it suggests that the linear model is incorrectly specified or misspecified. This is the logic behind the RESET test. 
+
+
+-  The steps in the tests are as under:
+
+    + Step 1: Fit the model and obtain the fitted value of the model $(\widehat Y)$ from it.
+  
+    + Step 2: Include the fitted value of the model $(\widehat Y)$ as additional regressors in the model. By looking at the relationship between $\hat u ~\text {and}~\widehat Y$ it may be required to include different forms of the fitted values $(\widehat Y)$ as additional regressors. 
+  
+    + For example, in the case of cost function estimation, you may include $(\widehat Y^2~\text {and}~ \widehat Y^3)$ as additional regressors and rewrite the model as following:
+
+        $$  Y_i=\beta_0 + \beta_1 X_i +\beta_2 {\hat Y}^2 +\beta_3 {\hat Y}^3 + u_i~~~~~...(B) $$ 
+
+      After fitting both the models $(A)$ and $(B)$, we can get the respective R-squared and label them as:
+        $$ R_{old}^2 = \text {R-squared from model A}\\ R_{new}^2 = \text {R-squared from model B}$$
+  
+      + Now to test the statistical significance of the changed in $R$-squared value, we use the following $F$-statistic:
+        $$ F=\frac{{\left (R_{new}^2 - R_{old}^2 \right)/\text {No. of new regressors}}}{{\left (1- R_{new}^2 \right)/ \left (n- \text {No of parameters in the new model} \right) }} $$
+		
+        If this $F$-test is statistically significant, it is accepted that the original model is mis-specified and it is required to rethink about the model specification.
+
+```{r,include=TRUE, comment=NA}
+library(lmtest)
+reset(model1, power = 2:3,type = "fitted")
+```
+
+
+- Let us fit the total cost function using polynomial form (second degree) of regression and repeat the previous tests.
+
+```{r,include=TRUE,echo=TRUE, comment=NA}
+model2<-lm(Y~X+I(X^2)+I(X^3))
+summary(model2)
+```
+
+
+```{r}
+plot(model2, which = 1:1)
+reset(model2, type = "fitted")
+```
+
+
+# Lagrange Multiplier (LM) Test
+
+```{r, echo=FALSE}
+htmltools::img(src = "logo.resized.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;')
+```
+
+
+- In the context of the above example, the model given by equation $(A)$ may be considered as a restricted version of the model given by equation $(B)$. The restricted version of the model $(A)$ assumes that the regression coefficients of the additional explanatory variables included in the model $(B)$ are equal to zero.
+
+- The steps in the LM test are as under:
+
+  + Step 1: Fit the restricted version of the model $(A)$ and obtain the residuals, $\hat u_i$.
+
+  + Step 2: Now if the unrestricted version of the model $(B)$ is actually the 'true' specification, the residuals of the restricted version $(A)$ should be related to the squared and cubed terms of $X$.
+
+  + Step 3: Regress the residuals obtained from the restricted model on the original regressand $X$, squared and cubed of $X$, that is, 
+
+    $$ \hat u_i = \lambda_0 +\lambda_1 X_i +\lambda_2 X_i^2 +\lambda_3 X_i^3 + v_i~~~~~~~~\cdots( C )\\
+where~~v_i =\text {the error term with all classical assumptions} $$
+
+  + Step 4: As the sample size becomes large, the $R$-squared from $(C)$ when multiplied by the sample size $(n)$ follows the chi-square distribution with degrees of freedom equal to number of restriction imposed by the restricted model. 
+So, in the present case, the degrees of freedom is 2, as two terms $X^2~\text {and}~X^3$ have been dropped from the model. Thus,
+
+    $$ n. R^2 \sim \chi_{ \text {No of restriction}}^2 $$ 
+
+      
+  + Step 5: If the above chi-square test is significant, it is accepted the original model specification was mis-specified.
+
+# Doing it manually in R
+
+```{r, echo=FALSE}
+htmltools::img(src = "logo.resized.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;')
+```
+
+
+```{r,include=TRUE,echo=TRUE,comment=NA}
+summary(model1)
+model3<-lm(model1$residuals~X+I(X^2)+I(X^3))
+summary(model3)
+# Finding the computed value of test statistic
+nRsquared= nobs(model3)*summary(model3)$r.squared
+print("Calculated value of Chi-square:")
+nRsquared
+# Table value of Chi-square
+#95% Critical value of Chi-square
+qchisq(0.95,2)
+#99% Critical value of Chi-square
+qchisq(0.99,2)
+```
+
+
+# Inclusion of Irrelevant or Unnecessary Variables (Overfitting Model)
+
+
+```{r, echo=FALSE}
+htmltools::img(src = "logo.resized.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;')
+```
+
+
+- As you know that $R^2$ in multiple regression is a non-decreasing function of the number of explanatory variables included in the model. For this reason, sometimes researchers add new explanatory variable in the model in the hope that the value of the $R^2$ as a model fit criteria will improve.
+
+- However, this may not be statistically correct if the variables are not meaningful and relevant either logically or theoretically. Then inclusion of too many explanatory variables (some of them may be actually irrelevant) will not significantly improve the $R^2$. This is what we call overfitting a model. 
+
+- The following are the consequences of overfitting a model:
+
+  i. The OLS estimators of the overfitted model are all unbiased and consistent.
+  ii. The error variances are correctly estimated. 
+  iii. However, the estimated coefficients of such a model are generally inefficient. That is, their variances will be larger than those of the true model.
+
+- **Thus, the differences between under-fitting and overfitting the model specification:**
+
+- In the under-fitting model the estimated coefficients are biased as well as inconsistent, the error variance is incorrectly estimated, and the hypothesis-testing procedure becomes invalid. 
+
+- In the  overfitting case, the estimated coefficients are unbiased as well as consistent, the error variance is correctly estimated; the only penalty we pay for the inclusion of irrelevant or superfluous variables is that the estimated variances, and hence the standard errors, are relatively large and therefore probability inferences about the parameters are less precise.
+
+
+# Proof of the Consequences
+
+
+```{r, echo=FALSE}
+htmltools::img(src = "logo.resized.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;')
+```
+
+
+- Suppose we start with the following model:
+
+  $$ Y_i = \beta_1 + \beta_2 X_{2i} + u_i \qquad\qquad\cdots(1) \Rightarrow \text {True Model} $$
+
+- However, we fit the following model:
+
+  $$ Y_i = \alpha_1 + \alpha_2 X_{2i}+\alpha_3 X_{3i} + u_i \qquad\qquad\cdots(2)\Rightarrow \text {Overfitted Model} $$
+
+- The consequences will be the following:
+
+  1. The OLS estimators of the parameters of the 'incorrect' model are all unbiased and consistent, that is,
+  $$E(\hat\alpha_1) = \beta_1, E(\hat\alpha_2 ) = \beta_2,~~\text  {and}~~ E(\hat\alpha_3) = \beta_3 = 0$$
+
+  2. The error variance $\sigma^2$ is correctly estimated.
+
+  3. The usual confidence interval and hypothesis-testing procedures remain valid.
+
+  4. However, the estimated $\alpha's$ will be generally inefficient, that is, their variances will be generally larger than those of the $\beta's$ of the true model.
+
+# Proof of Unbiasedness
+
+```{r, echo=FALSE}
+htmltools::img(src = "logo.resized.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;')
+```
+
+
+- Applying OLS to these models we get the following:
+
+  $$ \hat\beta_2=\frac {\sum y x_2}{\sum x_2^2}\qquad\qquad\cdots(3)~~\text {and it is unbiased} $$
+
+  $$ \hat\alpha_2=\frac {\left(\sum yx_2\right)\left (\sum x_3^2\right)-\left(\sum y x_3\right)\left(\sum x_2 x_3\right)}{\sum x_2^2 \sum x_3^2-\left(\sum x_2 x_3\right)^2}  \qquad\qquad\cdots(4)$$
+
+- Now the true model in deviation form can be written as:
+
+  $$ y_i=\beta_2 x_2+(u_i-\bar u)\qquad\qquad\cdots(5)$$
+
+- Substituting for $y_i$ from model (5) into model (4) and simplifying, we obtain
+
+  $$ \begin {aligned} E(\hat\alpha_2)&=\beta_2 \frac {\sum x_2^2\sum x_3^2-\left (\sum x_2 x_3\right)^2}{\sum x_2^2 \sum x_3^2-\left(\sum x_2 x_3\right)^2}\\&=\beta_2\qquad\qquad\cdots&(6) \end {aligned} $$
+
+- Similarly, we can also obtain:
+
+  $$ \hat\alpha_3= \frac {\left(\sum yx_3\right)\left (\sum x_2^2\right)-\left(\sum y x_2\right)\left(\sum x_2 x_3\right)}{\sum x_2^2 \sum x_3^2-\left(\sum x_2 x_3\right)^2}  \qquad\qquad\cdots(7) $$
+- Substituting $y_i$ from (5) into (7), and taking expectation we obtain:
+
+  $$ \begin {aligned} E(\hat\alpha_3)&=\beta_2 \frac {\left (\sum x_2 x_3\right)\left (\sum x_2^2\right)-\left (\sum x_2 x_3\right)\left (\sum x_2^2\right)}{\sum x_2^2 \sum x_3^2-\left(\sum x_2 x_3\right)^2}\\&=0\qquad\qquad\cdots&(8) \end {aligned} $$
+- This is its actual value in the true model since $X_3$ is absent from the true model.
+
+# Proof of Higher Variance
+
+```{r, echo=FALSE}
+htmltools::img(src = "logo.resized.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;')
+```
+
+
+- Applying OLS to both the models, we get 
+
+  $$ \begin {align} var(\hat\beta_2)&=\frac {\sigma^2}{\sum x_{2i}^2} \qquad\qquad\cdots(9)\\ var (\hat\alpha_2)&=\frac {\sigma^2}{\sum x_{2i}^2(1-r_{23}^2)}\qquad\qquad\cdots(10) \end {align} $$
+
+- Therefore,
+
+  $$ \frac {var(\hat\alpha_2)}{var(\hat\beta_2)}=\frac {1}{1-r_{23}^2}\qquad\qquad\cdots(11) $$
+
+- Now, as $0\le r_{23}^2\le 1$, it is clear that $var(\hat\alpha_2)\ge var(\hat\beta_2)$
+
+# Detection of Overfitting
+
+```{r, echo=FALSE}
+htmltools::img(src = "logo.resized.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;')
+```
+
+
+- The detection of overfitting model in Statistics & Econometrics is not very difficult. 
+
+- One can apply the $F$-test for marginal contribution of a variable to detect the presence of irrelevant variables in the model. 
+
+
+# Measurement Errors of the Variables
+
+```{r, echo=FALSE}
+htmltools::img(src = "logo.resized.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;')
+```
+
+- One of the assumptions of classical linear regression model is that the dependent and independent variables are measured without any errors. 
+
+- That is, they are not guess estimates, extrapolated, interpolated or rounded off in any systematic manner or recorded with errors.
+
+- Unfortunately this condition is often not satisfied, especially when we are dealing with the cross-sectional data.
+
+- The errors of measurement of both explanatory and explained variables may give rise to serious specification problems.
+
+# Errors of Measurement of the Dependent Variable
+
+```{r, echo=FALSE}
+htmltools::img(src = "logo.resized.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;')
+```
+
+
+- Suppose we have the following model specification:
+
+  $$ \begin {align} Y_i^*& = \beta_0 + \beta_1 X_{1i}  + u_i\qquad\qquad\cdots( 12 ) \end {align} $$ 
+
+- Here the dependent variable $Y_i^*$ is not correctly measured.  We can use the correct measurement of the dependent variable as $Y$ such that
+
+  $$ \begin {aligned} Y_i&=Y_i^*+\epsilon_i\qquad\qquad\cdots(13)\\where~~\epsilon_i &= \text {Measurement error in the dependent variable}~Y_i^* \end {aligned} $$
+
+- Thus, instead of estimating the model $(12)$,practically we are estimating the following model (14):
+
+  $$ \begin {aligned} Y_i &= (\beta_0 + \beta_1 X_{1i}  +u_i ) +\epsilon_i \\&=(\beta_0 + \beta_1 X_{1i}  )+(u_i +\epsilon_i)\\\Rightarrow Y_i&=(\beta_0 + \beta_1 X_{1i}) + v_i\qquad\qquad&\cdots( 14 )\\where~~ v_i&=\text {Composite error term} \end {aligned} $$
+
+- If there are such errors of measurement in the dependent variable, the following consequences will happen. 
+
+  i. The OLS estimators are still unbiased.
+  ii. But the estimated variances, and ipso facto the standard errors, are larger than in the absence of such errors.
+
+- Thus, the impact of measurement errors of the dependent variable is not so troublesome as far as the obtaining of unbiased estimators of the parameters of model are concerned. However, the estimated variances are now larger than in the case where there are no such errors of measurement.
+
+# Proof of the Consequences
+
+```{r, echo=FALSE}
+htmltools::img(src = "logo.resized.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;')
+```
+
+
+- For the simplicity's sake assume the following:
+
+  $$ \begin {aligned} E(u_i)&=0~~~~~~~~~~\text {Standard OLS Assumption}\\E(\epsilon_i)&=0~~~~~~~~~~\text {Standard OLS Assumption}\\cov(X_i,u_i)&=0~~~~~~~~~~\text {Standard OLS Assumption}\\cov(X_i, \epsilon_i)&=0~~~~~~~~~~\text {Error of measurement in}~Y_i^*~\text {uncorrelated with}~X_i\\cov(u_i,\epsilon_i)&=0 ~~~~~~~~~~\text {Equation error and measurement error are uncorrelated}\end {aligned} $$
+
+
+- With these assumptions, both (12) and (14) provide unbiased estimate of $\beta_1$ (see the BLUE property).
+
+- However, the variance (hence standard error) of $\beta_1$ estimated from (12) and (14) will be different. 
+
+- From model (12),
+
+  $$ var (\hat\beta_1)=\frac {\sigma_u^2}{\sum x_i^2}\qquad\qquad\cdots(15)  $$
+
+- From model (14),
+
+  $$ \begin {aligned} var (\hat\beta_1)&=\frac {\sigma_v^2}{\sum x_i^2}\\&=\frac {\sigma_u^2+\sigma_{\epsilon}^2}{\sum x_i^2}\qquad\qquad\cdots (16) \end {aligned}  $$
+
+- Which one is higher?
+
+# Errors of Measurement in the Explanatory Variable
+
+```{r, echo=FALSE}
+htmltools::img(src = "logo.resized.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;')
+```
+
+
+- Suppose in the model specification, the errors of measurement occurs in the explanatory variables, not in the dependent variable. That is, we have the following model specification:
+
+  $$Y_i = \beta_0 + \beta_1 X_{1i}^*  + u_i\qquad\qquad\cdots( 17 ) $$
+
+- Now suppose instead of observing $X_{1i}^*$ we observe
+
+  $$ X_{1i}=X_{1i}^* +w_i\qquad\qquad\cdots(18)\\\text {where}\qquad w_i=\text {Measurement Error in } ~X_{1i}^* $$
+
+- Thus, instead of estimating the model (17), we estimate the following model (19):
+
+  $$ \begin {aligned} Y_i &= \beta_0 + \beta_1 (X_{1i} - w_i )  + u_i\\&= \beta_0 + \beta_1 X_{1i}   + ( u_i- \beta_1 w_i )\\\Rightarrow Y_i&= \beta_0 + \beta_1 X_{1i}  + z_i\qquad\qquad\cdots( 19 )\\\\where~~ z_i &= ( u_i - \beta_1 w_i )\qquad\qquad\text {Composite Error Term} \end {aligned} $$
+
+
+# Consequences of Errors in Independent Variables
+
+```{r, echo=FALSE}
+htmltools::img(src = "logo.resized.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;')
+```
+
+- If we have such kind of measurement error in the any of the explanatory variables, we have the following consequences:
+    
+  i. OLS estimators biased as well as inconsistent.
+
+  ii. And not only that it becomes very difficult to establish the size and direction of bias in the estimated coefficients.
+
+
+
+- Now with respect to the changed model (19), even if we assume that $w_i$ has zero mean, is serially independent, and is uncorrelated with $u_i$, the composite error term $z_i$ is no logner independent of the explanatory variable $X_{1i}$ because of the following:
+
+- Aassuming $E[z_i] = 0$,
+
+  $$ \begin {aligned} cov(z,X_{1i})&=E\left [z-E(z_i) \right]\left[X_{1i}-E(X_{1i})\right] \\ &=E\left (u_i-\beta_1 w_i \right )(w_i)\\&=E(-\beta_1 w_i^2)\\\Rightarrow cov(z,X_{1i})&=-\beta_1 \sigma_w^2 \qquad\qquad\cdots(20) \end {aligned} $$
+
+- Thus, the explanatory variable and the error term in the changed model (19) are correlated, which violates the crucial assumption of the classical linear regression model that the explanatory variable is uncorrelated with the stochastic disturbance term.
+
+- If this assumption is violated, it can be shown that the OLS estimators are not only biased but also inconsistent, that is, they remain biased even if the sample size $n$ increases indefinitely.
+
+- Let us consider the original model:
+
+  $$ \begin {aligned} Y_i &= \beta_0 + \beta_1 X_{1i}^*  + u_i&\qquad\qquad\cdots( 21 )\\\text {where}~~ X_{1i}&=X_{1i}^*+w_i&\qquad\qquad\cdots(22) \end {aligned} $$
+
+
+- In deviation form the above two equations (21) and (22) can be written as under:
+
+  $$ \begin {aligned} y_i&=\beta_1^* x_{1i}^*+(u_i-\bar u)&\qquad\qquad\cdots(23)\\ where~~~x_{1i}&=x_{1i}^*+(w_i-\bar w)&\qquad\qquad\cdots(24) \end {aligned} $$
+
+- Now when the 'true model', $Y_i =\beta_0+\beta_1 X_{1i}+u_i$ is used, we get the following estimate:
+
+- $$ \begin {aligned} \hat\beta_1&=\frac {\sum y_i x_{1i}}{\sum x_{1i}^2}\\&=\frac {\sum \left [\beta_1^* x_{1i}^*+(u_i-\bar u) \right]\left [x_{1i}^*+(w_i-\bar w)\right] }{\sum \left [x_{1i}^*-(w_i-\bar w)\right]^2}\\&=\frac {\beta_1\sum {x_{1i}^*}^2+\beta_1 \sum x_{1i}^*(w_i-\bar w)+\sum x_{1i}^*(u_i-\bar u)+\sum (u_i-\bar u)(w_i-\bar w)}{\sum {x_{1i}^*}^2+2\sum x_{1i}^*(w_i-\bar w)+\sum(w_i-\bar w)^2} \end {aligned} $$
+
+
+- Now the expectation of this expression cannot be taken because the expectation of the ratio of two variables is not equal to the ratio of their expectations (note: the expectations operator E is a linear operator). So, we divide each term of the numerator and the denominator by $n$ and take the probability limit, $plim$, as under:
+
+  $$  \begin {aligned} \hat\beta_1&=\frac {(1/n)\left [\beta_1\sum {x_{1i}^*}^2+\beta_1 \sum x_{1i}^*(w_i-\bar w)+\sum x_{1i}^*(u_i-\bar u)+\sum (u_i-\bar u)(w_i-\bar w) \right]}{(1/n) \left [\sum {x_{1i}^*}^2+2\sum x_{1i}^*(w_i-\bar w)+\sum(w_i-\bar w)^2 \right]} \end {aligned} $$
+
+- Now the probability limit of the ratio of two variables is the ratio of their probability limits.
+
+- Applying this rule and taking $plim$ of each term, we get the following:
+
+  $$\DeclareMathOperator*{\plim}{plim} \begin {aligned} \plim \hat\beta_1&=\frac {\beta_1 \sigma_{x_{1i}^*}^2}{\sigma_{x_{1i}^*}^2+\sigma_w^2} \\where ~~~\sigma_{x_{1i}^*}^2&=\text {Variance of }~x_{1i}^*~~~\Rightarrow\text {when}~n~\text {increases indefinitely}\\\sigma_w^2&=\text {Variance of }~w ~~~\Rightarrow\text {when}~n~\text {increases indefinitely} \end {aligned} $$ 
+
+The fact that as the sample size increases indefinitely there is no correlation between the errors $u$ and $w$ as well as between them and the true $X_1^∗$.
+
+- After simplifying, we get the following:
+
+$$\DeclareMathOperator*{\plim}{plim}  \begin {aligned} \plim \hat\beta_1&=\beta_1 \left [\frac { 1}{1+\left (\sigma_w^2 \middle /\sigma_{x_{1i}^*}^2 \right)} \right] \end {aligned}\qquad\qquad\cdots(25) $$
+
+- Since the term inside the brackets is expected to be less than $1$, the above equation $(11)$ shows that even if the sample size increases indefinitely,$\hat\beta_1$ will not converge to $\beta_1$. 
+
+- Actually,if $\beta_1$ is assumed positive, $\hat\beta_1$ will underestimate $\beta_1$, that is, it is biased toward zero. 
+
+- Of course,if there are no measurement errors in $X_{1i}$ $(i.e., \sigma_w^2 = 0)$,in that case, $\hat\beta_1$ will provide a consistent estimator of $\beta_1$.
+
+# Note on Plim
+
+```{r, echo=FALSE}
+htmltools::img(src = "logo.resized.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;')
+```
+
+
+- An estimator $\hat\theta$ is said to be a consistent estimator of $\theta$ if the probability that the absolute value of the difference between $\hat\theta$ and $\theta$ is than $\delta$ (a very small positive quantity) approaches unity as the sample size goes on increasing. Symbolically,
+
+  $$ \lim_{n \to \infty} P \left\lbrace \mid \hat\theta - \theta \mid > \delta \right \rbrace =1~~~~~~~~~~~;\delta >0 $$ 
+
+  where $P$ stands for probability. This is often expressed as:
+
+  $$\DeclareMathOperator*{\plim}{plim} \plim_{n \to \infty}\hat\theta =\theta $$
+
+
+# Some Numerical Examples
+
+```{r, echo=FALSE}
+htmltools::img(src = "logo.resized.png", 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px;')
+```
+
+
+- Consider a hypothetical dataset on the following variables:
+
+ - True Consumption Expenditure $(C^*)$
+ - True Income $(Y^*)$
+ - Measured Consumption $(C)$
+ - Measured Income $(Y)$. 
+
+    All are measured in $\$US$.
+
+- Importing and viewing the data in R:
+
+```{r,include=TRUE,echo=TRUE,comment=NA,warning=FALSE}
+require(readxl)
+measure_error<-read_excel(path = "measurement error.xls", skip = 4, col_names = T)
+head(measure_error)
+```
+
+
+
+* Allowing Measurement Errors in the Dependent Variable $Y$ Only
+
+That is:
+
+$$ \begin {aligned} Y&=\beta_0+\beta_1 X^*+u ~~~~~~~~\Rightarrow \text {Wrong Model w.r.t to Dependent Variable Only} \\\\ Y^*&=\beta_0+\beta_1 X^*+u ~~~~~~~~\Rightarrow \text {True Model} \end {aligned} $$
+
+```{r,include=TRUE,echo=TRUE,comment=NA}
+model1<-lm(`Y*`~`X*`, data = measure_error)
+model2<-lm(Y~`X*`, data = measure_error)
+require(stargazer)
+stargazer(model1,model2, type = "text",style = "all", column.labels = c("True Model", "Wrong Model"))
+```
+
+
+* Allowing Measurement Errors in the Dependent Variable $Y$ Only
+
+That is:
+
+$$ \begin {aligned} Y^*&=\beta_0+\beta_1 X+u ~~~~~~~~\Rightarrow \text {Wrong Model w.r.t to Independent Variable Only} \\\\ Y^*&=\beta_0+\beta_1 X^*+u ~~~~~~~~\Rightarrow \text {True Model} \end {aligned} $$
+
+$$ Y^*=\beta_0+\beta_1 X^*+u $$
+
+```{r,include=TRUE,echo=TRUE,comment=NA}
+model3<-lm(`Y*`~X, data = measure_error)
+model4<-lm(`Y*`~`X*`, data = measure_error)
+stargazer(model4,model3, type = "text",style = "all", column.labels = c("True Model", "Wrong Model"))
+```
+
+
+
+Bias in estimate depends on $\frac {\sigma_w^2}{\sigma_{X^*}^2}$ whcih is a component of equation $(11)$ as under:
+
+$$  \begin {aligned} plim \hat\beta_1&=\beta_1 \left [\frac { 1}{1+\left (\sigma_w^2 \middle /\sigma_{x_{1i}^*}^2 \right)} \right] \end {aligned} $$
+
+
+```{r,include=TRUE,echo=TRUE,comment=NA}
+# Error term of true model
+resid1<-resid(model1)
+# Error of measurement in Independent Variable
+attach(measure_error)
+w = (X-`X*`)
+# Error of measurement in Dependent variable
+epsilon= (Y-`Y*`)
+# Putting all together in table
+require(knitr)
+uhat_error<-data.frame(resid1,w,epsilon)
+kable(uhat_error)
+```
+
+
+

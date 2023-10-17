@@ -1,0 +1,211 @@
+---
+title: "Extensions of Simple Linear Regression Model"
+author: |
+  | Bidyut Kumar Ghosh
+  | Department of Commerce
+  | Manipal Academy of Higher Education
+  | email: bidyut.ghosh@manipal.edu
+date: "`r format(Sys.time(), '%A, %B %d, %Y, %X')`"
+output: slidy_presentation
+toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, comment = NA, warning = FALSE,message = FALSE)
+```
+
+# Effects of Data Scaling on OLS Estimates
+
+# Data Description
+
+
+```{r}
+library(MASS)
+data("birthwt")
+?birthwt
+```
+
+So, we are expecting a model like:
+
+$$ bwt=\beta_1+\beta_2 age $$
+
+# Model1 Estimation
+
+```{r}
+attach(birthwt)
+#View(birthwt)
+#plot(age,bwt)
+model1<-lm(bwt~age,data = birthwt)
+summary(model1)
+```
+So, the estimated model is:
+
+$$ \widehat {bwt}= 2655.74+12.43 age $$
+
+# Model2 Estimation: Dependent Variable Units of Measurement Changed
+
+```{r}
+birthwt$bwt_k<-birthwt$bwt/1000
+attach(birthwt)
+model2<-lm(bwt_k~age,data = birthwt)
+summary(model2)
+```
+
+
+$$ \widehat {bwt}= 2.6557 + 0.1243 age $$
+
+```{r}
+library(stargazer)
+stargazer(model1, model2, type = "text",style = "all")
+```
+
+```{r}
+w1 = 1/1000
+model1$coefficients[2]*w1
+```
+```{r}
+sqrt(diag(vcov(model1)))[2] *w1
+```
+
+
+# Model3 Estimation: Rescaling the Independent variable only
+
+```{r}
+birthwt$age_m<-birthwt$age*12
+head(birthwt)
+attach(birthwt)
+model3<-lm(bwt~age_m,data = birthwt)
+```
+
+
+```{r}
+stargazer(model1,model3, type = "text",style = "all")
+```
+```{r}
+w2 = 12
+model1$coefficients[2]*(1/w2)
+```
+```{r}
+sqrt(diag(vcov(model1)))[2] *(1/w2)
+```
+
+
+# Rescaling x  and y equivalently
+
+```{r}
+head(birthwt)
+```
+
+```{r}
+model4<-lm(bwt_k~age_m,data = birthwt)
+stargazer(model1,model4,style = "all",type = "text")
+```
+
+# Log-Linear Model: Both the variables are log transformed
+
+Let us take case of a small canteen in a big supermarket. The canteen sells eggs and cookies. The canteen owner puts a poster in front of his store advertising either the fresh farm eggs or delicious chocolate cookies. The owner is particularly concerned about the sales of his farm’s eggs as it cannot be stores for a long time. The data for sales of eggs are collected for a period of one month. The following four variables are used:
+
+
+* Sales – the total number of eggs sold on a particular day
+* Price Eggs – the price of the eggs on a particular day
+* Price Cookies – the price of cookies on a particular day
+* Ad Type – the type of poster used in front of store; 0 – for cookies poster, 1 – for egg poster
+
+Now to measure the own price elasticity of demand for eggs and cross price elasticity of cookies, we use the following model specification:
+
+$$ \begin {aligned} ln( sales )=\beta_1 + \beta_2 ln ( Price.Eggs )+u \end {aligned} $$
+
+Obviously, the regression coefficient $\beta_2$ will measure the elasticity of demand for eggs with respect to its own price. 
+
+```{r}
+sales.data<-read.csv(file = "canteen.csv", header = TRUE, skip = 0)
+attach(sales.data)
+head(sales.data, 10)
+model5<-lm(log(Sales)~log(Price_Eggs))
+summary(model5)
+```
+$$ sales.egg = 7.18 - 2.56price.egg $$
+
+
+1. As per the theoretical expectation, the own price elasticity is negative and statistically significant too. So, if price of eggs is increased by 1%, then the sales will decrease by 2.56%.
+
+# Semi-log Model
+
+Suppose we want to check the growth of world GDP over a long period of time. 
+
+```{r}
+world_gdp<-read.csv(file = "world_gdp.csv",header = TRUE)
+head(world_gdp)
+```
+
+```{r}
+plot(world_gdp$YEAR, world_gdp$GDP, type = "l")
+```
+
+Suppose the World Gross Domestic Product is denoted by $Y_t$.  Then the growth rate of World GDP is given by
+
+$$ Y_t=A_0e^{\beta t} $$
+
+Taking natural log on both sides,
+
+$$ ln(Y_t)=ln(A_0)+\beta t $$
+By adding the stochastic error term, we get the PRF as:
+
+$$ ln(Y_t)=ln(A_0)+\beta t + u_t $$
+
+The coefficient $\beta$ gives the exponential growth rate of GDP.
+
+```{r}
+world_gdp$lGDP<-log(world_gdp$GDP)
+world_gdp$t<-seq(1:56)
+head(world_gdp)
+```
+
+```{r}
+model6<-lm(lGDP~t,data = world_gdp)
+summary(model6)
+```
+
+
+So, the estimated model is:
+
+$$ lnGDP=28.06+0.077 t $$
+
+Applying $e$ to both sides of the equation yields
+
+$$\begin {aligned} GDP&=e^{28.06+0.077t}\\&=e^{28.06}(e^{0.077})^t\\&=1535688606564 \times (1.08)^t \end {aligned} $$
+
+# Log-transformed Independent Variable
+
+Let us consider a simple example of house price determinants. As you can understand that the price of a house is determined by multiple factors such as house size, no of rooms, plot location, built quality, age of house etc. 
+
+For simple case, let us consider only one determinant, that is, house size (sq meter).
+
+$$ house price=\beta_1+\beta_2 ln(house size) $$
+
+```{r}
+hprice<-read.csv(file = "hprice1.csv",header = T)
+head(hprice)
+```
+```{r}
+attach(hprice)
+plot(sqrft, price)
+```
+
+
+
+```{r}
+model7<-lm(price~lsqrft,data = hprice)
+summary(model7)
+```
+
+$$ price =-1962.42+297.91 lsqrft $$
+
+So, if house size (sqrft) increases by 1%, it will yield the price to move up by
+
+$$ (1.01^{297.91}-1)=18.38 $$
+
+```{r}
+
+```
+

@@ -1,0 +1,115 @@
+---
+title: "Cigarette Consumption: Multiple Linear Regression Model"
+author: |
+  | Bidyut Kumar Ghosh
+  | Department of Commerce
+  | Manipal Academy of Higher Education
+  | email: bidyut.ghosh@manipal.edu
+date: "`r format(Sys.time(), '%A, %B %d, %Y, %X')`"
+output: slidy_presentation
+editor_options: 
+  chunk_output_type: inline
+---
+
+# Problem
+
+The data file CIGARETT.xlsx gives
+
+(i) the logarithm of cigarette consumption $(LNC)$ (in packs) per person of smoking age (> 16 years) for 46 states in 1992, 
+
+(ii) the logarithm of real price of cigarettes $(LNP$)$ in each state, and
+
+(iii) the logarithm of real disposable income per capita $(LNY)$ in each state. 
+
+This is drawn from Baltagi and Levin (1992) study on dynamic demand for cigarettes. It can be downloaded as Cigarett.dat from the Springer web site.
+
+Our objective is to find out the effects of real price of cigarettes and real disposable income per capita on the cigarette consumption in the USA.
+
+More specifically, the following questions need to be answered. 
+
+1. Estimate the model $LNC=\beta_1+\beta_2 LNP$ and interpret the results. 
+
+2. After estimating the previous model, do you think the $LNY$ can be added as a possible predictor in explaining the $LNC$? Justify your answer with the help of suitable test. 
+
+3. What is the elasticity of demand for cigarettes with respect to price? Is it statistically significant? If so, is it statistically different from 1?
+
+4. What is the income elasticity of demand for cigarettes? Is it statistically significant? If not, what might be the reasons for it?
+
+5. How would you retrieve $R^2$ from the adjusted $R^2$ given above?
+
+# Importing the data
+
+```{python}
+import pandas as pd
+cigarett=pd.read_excel("CIGARETT.xlsx")
+cigarett.head()
+```
+
+# Visualise the data
+
+
+```{python}
+import matplotlib.pyplot as plt
+cigarett.plot.scatter('LNC','LNP')
+plt.show()
+```
+
+```{python}
+plt.clf()
+cigarett.plot.scatter('LNC','LNY')
+plt.show()
+```
+
+
+# Model 1 Estimation
+
+```{python}
+import statsmodels.formula.api as smf
+model1=smf.ols('LNC~LNP',data=cigarett).fit()
+print(model1.summary())
+```
+
+# Model 2
+
+```{python}
+model2=smf.ols('LNC~LNP+LNY',data=cigarett).fit()
+print(model2.summary())
+```
+
+The test statistic can  be written in terms of $R^2$ of the models as follows:
+
+$$ \begin {aligned} F&=\frac {\left(R^2_{new}-R^2_{old}\right)/\text {No of new regressors}}{1-R_{new}^2/(n-\text {No of parameters in the new model})} \end {aligned}$$
+
+Under the standard set of assumptions, $F\sim F_{\text {No of new regressors}, n-\text {No of parameters in the new model}}$.
+
+
+
+```{python}
+from statsmodels.stats.anova import anova_lm
+anovaResults = anova_lm(model1, model2)
+print(anovaResults)
+```
+
+# Model 3
+
+The elasticity is -1.34. It is significantly different from zero, for the $t$ value under the null hypothesis that the true elasticity coefficient is zero is: 
+
+$$t = \frac{-1.34-0}{0.325}=-4.123$$
+
+The $p$-value of obtaining such a $t$ value is extremely low. 
+
+
+However, the elasticity coefficient is not different from one because under the null hypothesis that the true elasticity is 1, the $t$ value is 
+
+$$ t=\frac{-1.34-1}{0.325}=-1.05 $$
+
+
+This $t$ value is not statistically significant. 
+
+# Model 4
+
+The income elasticity, although positive, is not statistically different from zero, as the $t$ value under the zero null hypothesis is less than 1. 
+
+
+
+

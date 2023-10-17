@@ -1,0 +1,112 @@
+---
+title: "Logistic Regression"
+author: "Moh"
+date: "2023-08-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Estimation of Micro-Level Logit Model in R
+
+```{r}
+prakash<-read.csv(file = "prakash.csv", header= T )
+model2 <- glm(Renewed~Complaints+Subscriber.Tenure, family=binomial(link="logit"), data=prakash)
+summary(model2)
+```
+
+## Interpretation of Odd Ratios
+
+```{r}
+# Estimation of Odds manually
+cbind(Estimate=round(coef(model2),4), OR=round(exp(coef(model2)),4))
+
+```
+
+
+```{r}
+# Estimation using package
+library(mfx)
+logitor(Renewed~Complaints+Subscriber.Tenure, data = prakash)
+```
+
+## Calculating Pseudo R-Square
+
+```{r}
+countR2<-function(m) mean(m$y==round(m$fitted.values))
+countR2(model2)
+
+```
+
+## Calculating Pseudo R-Square (Adjusted)
+
+```{r}
+adj.countR2<-function(m) {
+n<-length(m$y)
+k<-max(table(m$y))
+correct<-table(m$y==round(m$fitted.values))[["TRUE"]]
+(correct-k)/(n-k)
+}
+adj.countR2(model2)
+
+```
+
+
+## Calculating Confusion Matrix
+
+```{r}
+confusion.matrix<-function(m)
+addmargins(table(m$y,round(m$fitted.values),dnn=c("Actual"
+,
+"Predicted")))
+confusion.matrix(model2)
+```
+
+## Use of 'pscl' package to get Psedo R-squared
+
+```{r}
+library(pscl)
+pR2(model2)
+```
+
+## LR Chisq Test
+
+```{r}
+logit_null<-glm(Renewed~1, family = binomial(link = "logit"),data = prakash)
+anova(logit_null,model2, test = "LRT")
+```
+
+## Confidence Interval
+
+```{r}
+confint(model2, level = 0.95)
+```
+
+```{r}
+confint.default(model2, level = 0.95)
+```
+## Logit model: predicted probabilities (Case 1)
+
+```{r}
+allmean <- data.frame(Complaints=mean(prakash$Complaints),Subscriber.Tenure=mean(prakash$Subscriber))
+allmean
+```
+
+```{r}
+allmean$pred.prob <- predict(model2,newdata=allmean, type="response")
+allmean
+```
+
+## Logit model: predicted probabilities (Case 2)
+
+```{r}
+mydata<-data.frame(ID=seq(1:3),Complaints=c(3,12,10),Subscriber.Tenure=c(14,4,5))
+mydata
+```
+
+```{r}
+predict(model2, newdata=mydata, type="response")
+```
+

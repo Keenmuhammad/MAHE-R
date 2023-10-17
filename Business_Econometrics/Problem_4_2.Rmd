@@ -1,0 +1,106 @@
+---
+title: "CEO Salary"
+author: "Bidyut Ghosh"
+date: "`r Sys.Date()`"
+output: slidy_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, comment = FALSE, message = FALSE)
+```
+
+# Problem Description
+
+
+Consider an equation to explain salaries of CEOs in terms of annual firm sales, return on equity (roe, in percentage form), and return on the firm’s stock (ros, in percentage form):
+
+$$ log(salary)=\beta_0+\beta_1log(sales) +\beta_2roe+\beta_3ros + u $$
+
+1) In terms of the model parameters, state the null hypothesis that, after controlling for sales and roe, ros has no effect on CEO salary. State the alternative that better stock market performance increases a CEO’s salary. 
+
+2) Using the data in CEOSAL1.xls, estimate the model and interpret the results.
+
+3) By what percentage is $salary$ predicted to increase if $ros$ increases by 50 points? Does $ros$ have a practically large effect on $salary$?
+
+4) Test the null hypothesis that $ros$ has no effect on $salary$ against the alternative that $ros$ has a positive effect. Carry out the test at the 10% significance level. 
+
+5) Would you include $ros$ in a final model explaining CEO compensation in terms of firm performance? Explain.
+
+The variable description are as under:
+
+1. salary                   1990 salary, thousands $
+2. pcsalary                 % change salary, 89-90
+3. sales                    1990 firm sales, millions $
+4. roe                      return on equity, 88-90 avg
+5. pcroe                    % change roe, 88-90
+6. ros                      return on firm's stock, 88-90
+7. indus                    =1 if industrial firm
+8. finance                  =1 if financial firm
+9. consprod                 =1 if consumer product firm
+10. utility                  =1 if transport. or utilties
+11. lsalary                  natural log of salary
+12. lsales                   natural log of sales
+
+
+# Data Import
+
+```{python}
+import pandas as pd
+pd.set_option('display.max_columns', None)
+ceosal1=pd.read_excel("ceosal1.xls")
+ceosal1.head()
+```
+
+
+# Visualisation
+
+```{python}
+import matplotlib.pyplot as plt
+import seaborn as sns
+sns.pairplot(ceosal1[['salary','sales','roe','ros']])
+```
+
+# Question No 1
+
+The hypothesis can be written as:
+
+$$ H_0:\beta_3=0\\H_1:\beta_3>0 $$
+# Question No 2
+
+```{python}
+import statsmodels.formula.api as smf
+model1=smf.ols('lsalary~lsales+roe+ros',data=ceosal1).fit()
+print(model1.summary())
+```
+
+The estimated model can be written as:
+
+$$ log(salary)=4.31+0.28 log(sales)+0.02 roe+0.0002 ros $$
+
+- The $R^2= 0.28$ which implies that only 28 percent variation in log(salary) is explained by the set of explanatory variables. The $F$ is, however, high enough and statistically significant. That is, the overall the model is statistically significant and can be accepted to explain log(salary) of CEOs.
+
+- The signs of the explanatory variables are found to behave as per our the expectation. The CEOs' salary depends on log(sales), roe and ros positively. 
+
+# Question No 3
+
+The proportionate effect on predicted salary $\widehat{salary}$ is $0.00024(50) = .012$. To obtain the percentage effect, we multiply this by $100: 1.2\%$. Therefore, a 50 point ceteris paribus increase in ros is predicted to increase salary by only 1.2%. Practically speaking, this is a very small effect for such a large change in ros.
+
+# Question No 4
+
+The 10% critical value for a one-tailed test, using $df = n-k=209-4=205$, is obtained as 1.286. The $t$ statistic on $ros$ is $.00024/0.001 ≈ 0.24$, which is well below the critical value.
+
+Therefore, we fail to reject $H_0$ at the 10% significance level.
+
+```{python}
+# Import Library
+import scipy.stats
+# To find the T critical value
+scipy.stats.t.ppf(q=1-.10,df=205)
+```
+
+
+# Question No 5
+
+Based on this sample, the estimated $ros$ coefficient appears to be different from zero only because of sampling variation. On the other hand, including $ros$ may not be causing any harm; it depends on how correlated it is with the other independent variables (although these are very significant even with $ros$ in the equation).
+
+

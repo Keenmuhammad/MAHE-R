@@ -1,0 +1,38 @@
+---
+title: "Test for Simultaneity"
+author: "Moh"
+date: "2023-08-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Numerical Examples: Solution
+
+```{r}
+Table19.4<-read.csv(file = "Topic 4 - Table 19_4.csv", header = TRUE)
+head(Table19.4)
+```
+
+```{r}
+str(Table19.4)
+```
+
+# Numerical Examples: Solution
+
+```{r}
+stage1<-lm(GDP~TBRATE+CPI,data = Table19.4)
+stage2<-lm(M2~GDP+resid(stage1),data = Table19.4)
+summary (stage1)
+summary(stage2)
+```
+
+# Numerical Examples: Solution
+
+```{r}
+lm_gdp_exe<-lm(M2~GDP+fitted(stage1),data = Table19.4)
+summary(lm_gdp_exe)
+```
+

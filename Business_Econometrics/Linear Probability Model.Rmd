@@ -1,0 +1,84 @@
+---
+title: "Linear Probability Model"
+author: "Moh"
+date: "2023-08-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Data Import
+
+```{r}
+prakash<-read.csv("prakash.csv",header = TRUE)
+head(prakash)
+```
+
+## Data Exploration
+
+```{r}
+attach(prakash)
+with(prakash, do.call(rbind, tapply(Complaints, Renewed, function(x) c(Mean = mean(x), SD = sd(x)))))
+```
+## Model Estimation
+
+```{r}
+with(prakash, do.call(rbind, tapply(Subscriber.Tenure, Renewed, function(x) c(Mean = mean(x), SD = sd(x)))))
+```
+
+```{r}
+model1<-lm( Renewed~Complaints+Subscriber.Tenure, data = prakash)
+summary(model1)
+```
+## Diagnostic Check Up: Graphical Approach
+
+```{r}
+par(mfrow=c(2,2))
+plot(model1)
+
+```
+
+## Heteroscedasticity of Error Terms
+
+```{r}
+plot(Complaints,model1$residuals^2, pch = "*"
+, col="red"
+, cex=3)
+
+```
+
+## Heteroscedasticity of Error Terms
+
+```{r}
+plot(Subscriber.Tenure,model1$residuals^2, pch = "*"
+, col="red"
+,cex=3)
+
+```
+## Unacceptable Values for Fitted Y values
+
+```{r}
+model1$fitted.values
+```
+
+## R-squared is Useless
+
+```{r}
+plot(Complaints, Renewed, pch="*"
+, col="red"
+, main = "Complaints Vs. Renewed"
+,cex=2)
+abline(lm(Renewed~Complaints,data = prakash), col="blue")
+
+```
+
+
+```{r}
+plot(Subscriber.Tenure, Renewed, pch="*", col="red", main = "Subscriber Tenure Vs. Renewed",
+abline(lm(Renewed~ Subscriber.Tenure, data = prakash), col="blue"))
+
+```
+
+

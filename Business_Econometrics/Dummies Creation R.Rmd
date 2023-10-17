@@ -1,0 +1,38 @@
+---
+title: "Limited Dependent Variable Example"
+author: "Moh"
+date: "2023-08-10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(readxl)
+dummy_creation<-read_excel(path = "dummy_creation.xlsx"
+, col_names = TRUE)
+attach(dummy_creation)
+head(dummy_creation)
+```
+
+
+```{r}
+dummy_creation$renew_dummy_1 <- ifelse(Renew == "Yes", 1, 0)
+head(dummy_creation)
+```
+
+
+```{r}
+library(fastDummies)
+dummy_creation<-dummy_cols(dummy_creation,select_columns ="Renew" )
+head(dummy_creation[,3:7],3)
+
+```
+
+```{r}
+
+```
+
