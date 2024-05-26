@@ -1,0 +1,109 @@
+---
+title: "Week2"
+author: "Moh"
+date: "2024-05-26"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, comment = NA, warning = FALSE, message = FALSE,
+  fig.align = 'center', fig.width = 7, fig.height = 5, fig.path = 'figures/', cache = TRUE, tidy = TRUE)
+```
+
+
+
+```{r}
+library(tidyverse)
+df1 <- read_rds('logistic1.rds')
+```
+
+```{r}
+slice_sample(df1, n = 10)
+```
+
+```{r}
+loyal_table <- table(df1$loyalty)
+print(loyal_table)
+print(loyal_table[2]/(loyal_table[1]+loyal_table[2]))
+```
+```{r}
+contrasts(df1$loyalty)
+```
+
+```{r}
+library(caret)
+set.seed(77) 
+partition <- caret::createDataPartition(y=df1$loyalty, p=.75, list=FALSE) 
+data_train <- df1[partition,]
+data_test <- df1[-partition,]
+print(nrow(data_train)/(nrow(data_test)+nrow(data_train)))
+```
+```{r}
+model_train <- glm(loyalty ~ category, family=binomial, data=data_train)
+summary(model_train)
+```
+
+
+```{r}
+predict_train <- predict(model_train, newdata=data_train, type='response')
+print(summary(predict_train))
+data_train$prediction <- predict_train
+head(data_train, n=10)
+```
+
+
+
+```{r}
+my_confusion_matrix <- function(cf_table) {
+  true_positive <- cf_table[4]
+  true_negative <- cf_table[1]
+  false_positive <- cf_table[2]
+  false_negative <- cf_table[3]
+  accuracy <- (true_positive + true_negative) / (true_positive + true_negative + false_positive + false_negative)
+  sensitivity_recall <- true_positive / (true_positive + false_negative) 
+  specificity_selectivity <- true_negative / (true_negative + false_positive)
+  precision <- true_positive / (true_positive + false_positive) 
+  neg_pred_value <- true_negative/(true_negative + false_negative)
+  print(cf_table)
+  my_list <- list(sprintf("%1.0f = True Positive (TP), Hit", true_positive),
+                  sprintf("%1.0f = True Negative (TN), Rejection", true_negative),
+                  sprintf("%1.0f = False Positive (FP), Type 1 Error", false_positive),
+                  sprintf("%1.0f = False Negative (FN), Type 2 Error", false_negative),
+                  sprintf("%1.4f = Accuracy (TP+TN/(TP+TN+FP+FN))", accuracy), 
+                  sprintf("%1.4f = Sensitivity, Recall, Hit Rate, True Positive Rate (How many positives did the model get right? TP/(TP+FN))", sensitivity_recall),
+                  sprintf("%1.4f = Specificity, Selectivity, True Negative Rate (How many negatives did the model get right? TN/(TN+FP))", specificity_selectivity),                   
+                  sprintf("%1.4f = Precision, Positive Predictive Value (How good are the model's positive predictions? TP/(TP+FP))", precision),
+                  sprintf("%1.4f = Negative Predictive Value (How good are the model's negative predictions? TN/(TN+FN)", neg_pred_value)
+  )
+  return(my_list)
+}
+```
+
+```{r}
+table1 <- table(predict_train>0.5, data_train$loyalty) #prediction on left and truth on top
+my_confusion_matrix(table1)
+```
+
+```{r}
+predict_test <- predict(model_train, newdata=data_test, type='response')
+print(summary(predict_test))
+data_test$prediction <- predict_test
+head(data_test, n=10)
+table2 <- table(predict_test>.5, data_test$loyalty) #prediction on left and truth on top
+my_confusion_matrix(table2)
+```
+```{r}
+model_train <- glm(loyalty ~ category + factor(quarter) + state, family=binomial, data=data_train)
+summary(model_train)
+```
+
+
+```{r}
+predict_test <- predict(model_train, newdata=data_test, type='response')
+summary(predict_test)
+data_test$prediction <- predict_test
+head(data_test, n=10)
+table2 <- table(predict_test>.5, data_test$loyalty)
+my_confusion_matrix(table2)
+```
+

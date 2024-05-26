@@ -1,0 +1,257 @@
+---
+title: "Untitled"
+author: "Moh"
+date: "2024-05-25"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      comment = NA, warning = FALSE, message = FALSE)
+```
+
+```{r}
+data = read.csv("tecaPOSSmall.csv")
+data
+```
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+trd = readRDS('tecaRegressionData.rds')
+trd
+```
+
+```{r}
+str(trd)
+```
+
+```{r}
+sum(is.na(trd))
+```
+
+```{r}
+rowSums(trd[,7:13])
+```
+
+```{r}
+sum(rowSums(trd[,7:13]))
+```
+
+```{r}
+n_distinct(trd$site_name)
+```
+
+```{r}
+summary(trd)
+```
+
+```{r}
+trd%>%
+  pivot_longer(cols = 7:13, names_to = 'parent', values_to = 'pctSales') %>% 
+  mutate(parent = abbreviate(parent, 10)) %>%
+  ggplot(aes(x = parent, y = pctSales)) + geom_boxplot()
+```
+
+```{r}
+trd %>%
+  pivot_longer(cols = 7:13, names_to = 'parent', values_to = 'pctSales') %>%
+  mutate(parent = abbreviate(parent, 6)) %>%
+  ggplot(aes(x = parent, y = pctSales)) +
+  geom_boxplot() +
+  # facet_grid(~lat + long)
+  facet_wrap(facets = vars(lat, long), nrow = 2)
+```
+## Correlation
+
+```{r}
+library(corrplot)
+```
+
+
+```{r}
+ggplot(trd, aes(x = Fuel_py1, y = totalRevenue)) +
+  geom_point()
+```
+
+```{r}
+ggplot(trd, aes(x = Pop_py1, y = totalRevenue)) +
+  geom_point()
+```
+
+```{r}
+cor(trd[,c('totalRevenue', 'Fuel_py1')])
+```
+
+```{r}
+cor(trd[,c('totalRevenue', 'Fuel_py1', 'Pop_py1')])
+```
+```{r}
+ctrd <- cor(trd %>% select(where(is.numeric)))
+ctrd
+```
+```{r}
+corrplot(ctrd
+         , method = 'color' # I also like pie and ellipse
+         , order = 'hclust' # Orders the variables so that ones that behave similarly are placed next to each other
+         , addCoef.col = 'black'
+         , number.cex = .6 # Lower values decrease the size of the numbers in the cells
+         )
+```
+```{r}
+ggplot(trd, aes(x = Juicetonics_py1, y = totalRevenue)) +
+  geom_point()
+```
+```{r}
+pairs(trd %>% select(where(is.numeric)), cex = .1) # See the help documentation for adding in coefficients and histograms.
+```
+
+## Simple linear regression
+
+```{r}
+ggplot(trd, aes(x = Fuel_py1, y = totalRevenue)) +
+  geom_point() +
+  stat_smooth(method = 'lm')
+```
+
+```{r}
+lm1 <- lm(totalRevenue ~ Fuel_py1, data = trd)
+```
+
+```{r}
+summary(lm1)
+```
+```{r}
+ggplot(trd, aes(x = Fuel_py1, y = totalRevenue)) +
+  geom_point() +
+  expand_limits(x = c(0,1)) +
+  stat_smooth(method = 'lm', fullrange = T)
+```
+
+```{r}
+lm2 <- lm(totalRevenue ~ Juicetonics_py1, data = trd)
+summary(lm2)
+```
+
+```{r}
+trd %>% 
+  pivot_longer(cols = c(Fuel_py1, Juicetonics_py1), names_to = 'parent_name', values_to = 'pctRev_py1') %>%
+  ggplot(aes(x = pctRev_py1, y = totalRevenue)) +
+  geom_point() +
+  stat_smooth(aes(color = parent_name), method = 'lm', fullrange = T, se = F)
+
+```
+## Residuals and Prediction
+
+```{r}
+resids <- trd %>%
+  select(Fuel_py1, totalRevenue) %>%
+  mutate(fittedRevenue = -11510 + 35097*Fuel_py1
+         , residuals = totalRevenue - fittedRevenue)
+head(resids)
+```
+
+```{r}
+# Create a dataframe with residuals and identifying information
+resids2 <- trd %>%
+  select(site_name, quarter, Fuel_py1, totalRevenue)
+resids2$fittedRevenue = lm1$fitted.values
+resids2$residuals = lm1$residuals
+
+# Get the five best performing store/quarter combinations
+best <- resids2 %>%
+  arrange(desc(residuals)) %>%
+  .[1:5,]
+# Get the five worst performing store/quarter combinations
+worst <- resids2 %>%
+  arrange(residuals) %>%
+  .[1:5,] %>%
+  arrange(desc(residuals))
+
+# Combine the five best and worst into one dataframe and display them
+bestWorst <- bind_rows(best,worst)
+bestWorst
+```
+
+```{r}
+# Dreate a dataframe of new observations
+newObservations <- data.frame(storeName = c('1', '2', '3', '4', '5')
+                              , Fuel_py1 = c(.3, .35, .4, .5, .55))
+# Add a new column of predicted values
+newObservations$predictedRevenue = predict(lm1, newObservations)
+# Display the dataframe in this notebook
+newObservations
+```
+
+## Multiple Regression
+
+```{r}
+library(jtools)
+```
+
+```{r}
+lm1 <- lm(totalRevenue ~ Fuel_py1, data = trd)
+lm2 <- lm(totalRevenue ~ Juicetonics_py1, data = trd)
+export_summs(lm1, lm2)
+```
+
+```{r}
+plot_summs(lm1, lm2)
+```
+```{r}
+lm3 <- lm(totalRevenue ~ Fuel_py1 + Juicetonics_py1, data = trd)
+export_summs(lm1, lm2, lm3)
+```
+```{r}
+ctrd <- cor(trd %>% select(where(is.numeric)))
+corrplot(ctrd
+         , method = 'color' # I also like pie and ellipse
+         , order = 'hclust' # Orders the variables so that ones that behave similarly are placed next to each other
+         , addCoef.col = 'black'
+         , number.cex = .6 # Lower values decrease the size of the numbers in the cells
+         )
+```
+
+```{r}
+plot_summs(lm1, lm2, lm3)
+```
+```{r}
+lm4 = lm(totalRevenue ~ Fuel_py1 + Juicetonics_py1 + ColdDispensedBeverage_py1 + Lottery_py1, data = trd)
+summary(lm4)
+```
+```{r}
+lm5 = lm(totalRevenue ~ Fuel_py1 + Juicetonics_py1 + ColdDispensedBeverage_py1, data = trd)
+summary(lm5)
+```
+```{r}
+plot_summs(lm1, lm2, lm3, lm4, lm5)
+```
+
+## Dummy Variable
+
+```{r}
+data.frame('quarterNoYear' = c('First', 'Second', 'Third', 'Fourth')
+           , 'quarterNoYearSecond' = c(0,1,0,0)
+           , 'quarterNoYearThird' = c(0,0,1,0)
+           , 'quarterNoYearFourth' = c(0,0,0,1))
+```
+```{r}
+lm6 <- lm(totalRevenue ~ quarterNoYear, data = trd)
+summary(lm6)
+```
+
+```{r}
+trd %>%
+  group_by(quarterNoYear) %>%
+  summarize(meanRevenue = mean(totalRevenue)) %>%
+  ungroup()
+```
+
+```{r}
+lm7 <- lm(totalRevenue ~ Fuel_py1 + Juicetonics_py1 + ColdDispensedBeverage_py1 + quarterNoYear, data = trd)
+summary(lm7)
+```
+

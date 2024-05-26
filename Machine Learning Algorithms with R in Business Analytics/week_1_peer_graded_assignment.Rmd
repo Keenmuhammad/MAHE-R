@@ -1,0 +1,91 @@
+---
+title: "week_1_peer_graded_assignment"
+author: "Moh"
+date: "2024-05-26"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      comment = NA, warning = FALSE, message = FALSE)
+```
+
+
+```{r}
+library(lubridate)
+library(dplyr)
+```
+
+
+```{r}
+data = read.csv("day.csv")
+head(data)
+```
+
+```{r}
+summary(data)
+```
+```{r}
+data$dteday <- as.Date(data$dteday)
+data <- data %>%
+  mutate(month_name = month(dteday, label = TRUE, abbr = FALSE))
+
+data$month_name <- as.character(data$month_name)
+print(data)
+```
+```{r}
+Model1 = lm(cnt ~ month_name, data = data)
+```
+
+```{r}
+summary(Model1)
+```
+
+
+* The R-squared value is 0.3906 which is  39.06%, represents the variation of cnt that has been 
+explained by the model. In other words, the month_name variable account for 39.06% of the variation in cnt.
+* The R-squared value indicates that the model explains a moderate portion of the variance in cnt. While it is not very high, it shows that the month_names have a notable impact on the dependent variable.
+
+
+* The month that is set as the reference month is the month of April wich is represented by the intercept. The predicted cnt for the refrence month is "4484.9".
+
+* The predicted cnt for January = Intercept+January coefficient
+= 4484.9 + (−2308.6)
+= 4484.9 − 2308.6 
+Predicted cnt for January = 2176.3
+* The predicted cnt for June = Intercept+June coefficient
+= 4484.9+1287.5
+= 5772.4
+Predicted cnt for June = 5772.4
+
+```{r}
+Model2 = lm(cnt ~ month_name + temp, data = data)
+```
+
+```{r}
+summary(Model2)
+```
+
+* The R-squared value is 0.4469 which is  44.69%, represents the variation of cnt that has been 
+explained by month_name and temp.
+
+* The R squared is a bit higer than that of the first model which is 0.3906. This improvement suggests that temp is an important predictor for cnt and its inclusion leads to a better-fitting model.
+
+```{r}
+export_summs(Model1,Model2)
+```
+
+* The coefficient estimates for the month_nameJanuary variable in Model1 and Model2 are as follows:
+Model1: -2308.56
+Model2: -852.31
+* The coefficient estimate for month_nameJanuary changes from -2308.56 in Model1 to -852.31 in Model2 due to the inclusion of the temp variable in Model2. This inclusion helps to account for the effect of temperature on cnt, reducing the omitted variable bias present in Model1 and leading to a more accurate estimation of the impact of monh_name January on cnt.
+
+* The predicted cnt for Model2 for the month of January when the temperature is .25 is:
+
+$$1554.39 + (.25*-852.31) = 1341.312$$
+
+
+
+
+
+
