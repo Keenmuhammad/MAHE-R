@@ -1,0 +1,182 @@
+************************************************************************
+# Title: Decision Trees
+Course: MBA563
+Module: 07
+Author: Jessen Hobson
+************************************************************************
+
+# Run this code before you start.
+```{r}
+# load needed packages
+library(tidyverse)
+
+# Confusion Matrix function
+my_confusion_matrix <- function(cf_table) {
+  true_positive <- cf_table[4]
+  true_negative <- cf_table[1]
+  false_positive <- cf_table[2]
+  false_negative <- cf_table[3]
+  accuracy <- (true_positive + true_negative) / (true_positive + true_negative + false_positive + false_negative)
+  sensitivity_recall <- true_positive / (true_positive + false_negative) 
+  specificity_selectivity <- true_negative / (true_negative + false_positive)
+  precision <- true_positive / (true_positive + false_positive) 
+  neg_pred_value <- true_negative/(true_negative + false_negative)
+  print(cf_table)
+  my_list <- list(sprintf("%1.0f = True Positive (TP), Hit", true_positive),
+                  sprintf("%1.0f = True Negative (TN), Rejection", true_negative),
+                  sprintf("%1.0f = False Positive (FP), Type 1 Error", false_positive),
+                  sprintf("%1.0f = False Negative (FN), Type 2 Error", false_negative),
+                  sprintf("%1.4f = Accuracy (TP+TN/(TP+TN+FP+FN))", accuracy), 
+                  sprintf("%1.4f = Sensitivity, Recall, Hit Rate, True Positive Rate (How many positives did the model get right? TP/(TP+FN))", sensitivity_recall),
+                  sprintf("%1.4f = Specificity, Selectivity, True Negative Rate (How many negatives did the model get right? TN/(TN+FP))", specificity_selectivity),
+                  sprintf("%1.4f = Precision, Positive Predictive Value (How good are the model's positive predictions? TP/(TP+FP))", precision),
+                  sprintf("%1.4f = Negative Predictive Value (How good are the model's negative predictions? TN/(TN+FN)", neg_pred_value)
+  )
+  return(my_list)
+}
+```
+
+We will now us the decision tree algorithm to address our business problem. 
+
+TECA is planning for the future and would like to set up their business so they are not so reliant on selling gasoline. One way to do that is to increase the sales of profitable products. Thus, TECA would like to predict when a transaction is a going to be a sale of a high gross profit margin product. Profit margin is the percentage of gross profit to revenue, or revenue minus costs divided by revenue. It is a percentage of how much profit each product makes or what percentage of profit is earned for each dollar of revenue.
+
+The first thing we need to do is bring in the dataset we are going to work with. This is TECA data that has been transformed to be used in our decision tree analysis. Let's load it and examine it a bit. 
+
+We first notice that the dataset has 200,000 rows and 13 features. This data is aggregated at the level of a purchase. Thus, each example or row is the purchase of one item. 
+
+* The first feature is the target feature or the dependent variable. This is the variable we are trying to predict. It is called `high_gpm`. It is a factor that is either low or high. 
+
+* The second variable is a categorical variable `loyalty2`. This feature indicates whether the purchase was made by a loyalty customer (a customer who scanned their loyalty card) or not. Note, two things here. First, note that the data was adjusted so that about half of the purchases in this dataset were made by loyalty customers, since TECA is particularly interested in these customers. Second, note that the decision tree method does not require us to make all of our variables numerical. Thus, we do not have to convert our character/categorical features to multiple columns of dummy variables. 
+
+* Next we see `revenue`. This variable is the amount of revenue TECA makes for each purchase. Revenue is a continuous variable. 
+
+* Next we have the `quarter` feature. This variable indicates the quarter of the year in which the purchase took place. 
+
+* Next, `income`, `bachelors_degree`, and `population` list these averages for the location of the store where the purchase took place. 
+
+Next, we have another multi-level factor variable, `state_province` that lists the state the purchase happened in.  
+
+* Next, we have `num_trans`, which indicates how many purchases were made by this same person as part of this transaction. 
+
+* Next, `basket` indicates whether the purchase was part of a multi-part transaction.
+
+* Next, `refill` indicate whether or not the purchase was a refill of fountain soda. 
+
+* Area is a multi-level categorical variable that indicates the area of the store the purchase was made, as follows:
+  + `alcohol`: products in this area include, for example, wine and beer; 
+  + `cooler`: products in this area include, for example, energy drinks, canned soda, and juice;
+  + `dispensed`: products in this area include, for example, cold and hot dispensed (fountain) drinks; 
+  + `fresh`: products in this area include, for example, pizza, hot sandwiches, salads, and roller grill items;
+  + `fuel`: products in this area include, for example, gas;
+  + `grocery`: products in this area include, for example, milk, eggs, and cheese;
+  + `lottery`: products in this area include, for example, lottery tickets;
+  + `miscellaneous`: products in this area include, for example, store services and coupons;
+  + `nongrocery`:  products in this area include, for example, clothing, magazines, medicine, and newspapers;
+  + `snacks`: products in this area include, for example, candy, gum, chips, and salty snacks; and
+  + `tobacco`: products in this area include, for example, cigarettes and chewing tobacco.
+
+* Next, `items_sold` indicate how many of these items were purchased in this transaction.
+
+# Explore the data
+```{r}
+tree_input <- read_rds('tree_input.rds')
+str(tree_input)
+slice_sample(tree_input, n=10)
+```
+
+Let's look more in depth at the target feature. For tree analysis, the target feature is a categorical variable. In this implementation we can leave it as a factor. About 44% of these purchases are for high gross profit items.
+
+# Explore the target feature
+```{r}
+freq <- table(tree_input$high_gpm)
+freq[2]/(freq[1]+freq[2])
+contrasts(tree_input$high_gpm)
+```
+
+Before using the algorithm, we need to prepare the data. The first line below loads the `caret` package. The next line sets the seed for the randomization that will be used for the data split. The `caret::createDataPartition()` function uses the caret package to split the data. Basically, it creates a number for `p` amount, in this case 0.75, of the target feature and lists these numbers in a matrix (since `list` is `FALSE`). Next, the training data and testing data are created. These use the numbers from the `partition` matrix that we just created. `data_train` retains each of the rows with numbers in `partition` while `data_test` takes the numbers not in partition, i.e., `-partition`. We use the `set.seed()` function with the same number every time to get a reproducible result every time we run this code, since the function relies on R's random number generator. Of course, your results might not exactly replicate mine if your R version is different, etc. 
+
+# Partition the data
+```{r}
+library(caret)
+set.seed(77)
+partition <- caret::createDataPartition(y=tree_input$high_gpm, p=.75, list=FALSE)
+data_train <- tree_input[partition, ]
+data_test <- tree_input[-partition, ]
+```
+
+For decision trees, which don't rely on distance to calculate splits, we do not need to standardize our data. Thus, we are ready to run our model. The `tree()` function creates our tree object. The first argument in the function is our formula. We are predicting the feature variable, `high_gpm` on the left-hand side of the `~`, and using all of our other features to predict it, as indicated by `.`. We do this, of course, with our training data. As usual, we hold back our test data to evaluate our model later. 
+
+# Run the model
+```{r}
+#install.packages('tree')
+library(tree)
+model_tree <- tree(high_gpm ~ ., data_train)
+```
+
+First, before we explore the tree and find out what it tells us, let's see how accurate our model is. If this model is going to help TECA makes decisions, it needs to be accurate at predicting whether a purchase will be for a high gross profit margin product or not. 
+
+The first step in this process is using the model we trained on our training data to see how well it predicts on our holdout testing data. The predict function for the `tree` package does this for us. Notice that the testing data is passed as the second argument. The `type='class'` argument tells R to give the output as the actual class label--`low` and `high` in our case.
+
+# Predict the model on the holdout testing data
+```{r}
+predict_tree <- predict(model_tree, data_test, type='class') 
+```
+
+Next, let's use the confusion matrix function created at the beginning of the notebook. Overall, we find that our model is very accurate. The model makes the correct prediction about 85% of the time!
+
+Let's explore some details of the accuracy of this model. The table shows the following output:
+* When a transaction is actually/truthfully a high gross profit margin transaction, the model correctly classifies it as such-by saying "high", 16186 times. This is called a True Positive (TP), Hit.
+
+* When a transaction is truthfully a low gross profit margin transaction, the model correctly classifies it as such--by saying "low", 26281 times. This is a True Negative (TN), Rejection.
+
+* On the other hand, the model makes two kinds of errors. When the model transaction is not a high gross profit margin transaction, but the model incorrectly says it is, this is called a False Positive (FP), Type 1 Error. It happens 2014 times.
+
+* Finally, when a transaction is a high gross profit margin transaction and the model says it is not, which here happens 5519 times, it is called a False Negative (FN), Type 2 Error.
+
+These numbers can then be manipulated to create different measures of accuracy, as follows:
+* Overall accuracy (TP+TN/(TP+TN+FP+FN)) is 0.8493.
+
+* Sensitivity, Recall, Hit Rate, True Positive Rate (How many positives did the model get right? TP/(TP+FN)), is 0.7457.
+
+* Specificity, Selectivity, True Negative Rate (How many negatives did the model get right? TN/(TN+FP)) is 0.9288. 
+
+* Precision, Positive Predictive Value (How good are the model's positive predictions? TP/(TP+FP)) is 0.8893.
+
+* Negative Predictive Value (How good are the model's negative predictions? TN/(TN+FN) is 0.8264.
+
+Overall, our model does a great job at predicting when a purchase will be high profit margin versus low profit margin and gets it right 85% of the time. The aspect of the model that is the least effective is its sensitivity and the aspect that is the most effective is the specificity. This means that the model is very good at classifying the low margin purchases successfully (specificity), but slightly worse at classifying the high margin purchases correctly (sensitivity). Thus, while the model is quite good overall, it particularly excels at identifying bad transactions. As we examine the tree below, it should become clear why low margin products are a bit easier to classify.
+
+# Confusion matrix - checking accuracy
+```{r}
+table1 <- table(predict_tree, data_test$high_gpm)
+my_confusion_matrix(table1)
+```
+
+Next, let's examine the details of the tree we have created and what it might tell us that might help TECA increase their sales of profitable products. We can start this process very simply by using the `summary()` function on our tree object, `model_tree`. We learn a couple very useful things here. First, we learn that only two variables were used in our tree--`area` and `revenue`. Next, we are told how many terminal nodes exist. Finally, we are given some error measurements. Residual mean deviance is a measure of variance in the model and misclassification error rate is measure of how many examples were misclassified. It shows that 22,723, or about 15%, of our total observations were incorrectly classified (split into the wrong partition). 
+
+# Summarize the results from our model
+```{r}
+summary(model_tree)
+```
+
+Next, let's look at the tree in text form. To do this, we simply type the name of the tree object that we just created. This is our tree, albeit in text form. It gives us quite a lot of information. the first line is the key to reading the table, `node), split, n, deviance, yval, (yprob)`. It says that each line starts with a numbered node, lists the equation used to split the data, the number of observations following the left side of the branch, the deviance associate with the branch, the predicted value at the node, and the proportion of the values at the branch that are absent and present. This is very informative, but let's also plot the tree so that we can get a fuller picture (literally) and discuss what the tree is telling us. 
+
+# Tree in text form
+```{r}
+model_tree
+```
+
+These two functions plot the tree. The first one gives the outline and the second one inserts the text. The heights of the lines are proportional to the decrease in impurity. Thus, the longer the line, the more helpful the split at reducing messiness in the model. The `all=TRUE` option adds extra labels, `cex=.75` provides the size of things, `font=2` changes the font, `digits=2` changes the number of digits following the decimal point, and `pretty=0` keeps the labels in the plot. 
+
+So, what do we learn from the text above and the plot? As we move through the tree, moving to the left is "yes" while moving to the right is "no". "Low" and "high" at the leaf nodes indicates that is the prediction of the profitability of the purchase. 
+
+We actually learn a lot that can help TECA. The first, and most significant split that determines whether a purchase will be for a high or low gross profit is whether the purchases is for fuel, alcohol, tobacco, lottery, or miscellaneous. If the answer to this is yes, we move to the left of the tree and the product is very likely to be low profitability. While the management team at TECA surely knows which products are high and low profit. This stark result should make it clear that if individual profitability is the primary concern of management it is important to 1) get customers into the store, and 2) get customers to move beyond just the traditional "vice" products. To the extent management can convert its stores to locations where people do more than just grab cigarettes, beer and lottery tickets after grabbing some gas, the more profitable they will be. Clearly there are other considerations for management, and these products drive traffic into the store and increase revenue, but management can use this knowledge to increase the purchase of higher margin products, perhaps even in concert with these vice products. 
+
+Let's explore the rest of the plot. If participants instead buy snacks, fresh, grocery, cooler, dispensed, or nongrocery items the model gets a bit more complicated. If customers buy snacks, grocery, or cooler items the profitability of the purchase depends on revenue, such that lower profit actually is more likely to lead to higher profitability. This is also likely useful information for TECA. This helps them realize that even the smaller priced items, from the correct areas of the store, are profitable. This might lead to promotion of the products by placing them in the front of coolers or on the counter at checkout. If the customer instead purchases fresh, dispensed, or nongrocery items the data is split between dispensed and fresh and nongrocery. Dispensed items are predicted to be high profit. Thus, TECA should continue promoting and facilitating fountain drinks and coffee. Finally, if fresh food and nongrocery items are purchased, profitability is also predicted to be high, whether revenue is above or below $2.21. 
+
+# Plot the tree
+```{r}
+plot(model_tree)
+text(model_tree, all=TRUE, cex=.75, font=2, digits=2, pretty=0)
+```
+

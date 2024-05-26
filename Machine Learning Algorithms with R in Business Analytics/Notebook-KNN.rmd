@@ -1,0 +1,180 @@
+************************************************************************
+# Title: KNN
+Course: MBA563
+Module: 07
+Author: Jessen Hobson
+************************************************************************
+
+# Run this code before you start.
+```{r}
+# load needed packages
+library(tidyverse)
+#install.packages('e1071')
+library(e1071)
+# Confusion Matrix function
+my_confusion_matrix <- function(cf_table) {
+  true_positive <- cf_table[4]
+  true_negative <- cf_table[1]
+  false_positive <- cf_table[2]
+  false_negative <- cf_table[3]
+  accuracy <- (true_positive + true_negative) / (true_positive + true_negative + false_positive + false_negative)
+  sensitivity_recall <- true_positive / (true_positive + false_negative) 
+  specificity_selectivity <- true_negative / (true_negative + false_positive)
+  precision <- true_positive / (true_positive + false_positive) 
+  neg_pred_value <- true_negative/(true_negative + false_negative)
+  print(cf_table)
+  my_list <- list(sprintf("%1.0f = True Positive (TP), Hit", true_positive),
+                  sprintf("%1.0f = True Negative (TN), Rejection", true_negative),
+                  sprintf("%1.0f = False Positive (FP), Type 1 Error", false_positive),
+                  sprintf("%1.0f = False Negative (FN), Type 2 Error", false_negative),
+                  sprintf("%1.4f = Accuracy (TP+TN/(TP+TN+FP+FN))", accuracy), 
+                  sprintf("%1.4f = Sensitivity, Recall, Hit Rate, True Positive Rate (How many positives did the model get right? TP/(TP+FN))", sensitivity_recall),
+                  sprintf("%1.4f = Specificity, Selectivity, True Negative Rate (How many negatives did the model get right? TN/(TN+FP))", specificity_selectivity),                   
+                  sprintf("%1.4f = Precision, Positive Predictive Value (How good are the model's positive predictions? TP/(TP+FP))", precision),
+                  sprintf("%1.4f = Negative Predictive Value (How good are the model's negative predictions? TN/(TN+FN)", neg_pred_value)
+  )
+  return(my_list)
+}
+```
+
+We will now us the KNN algorithm to address our business problem. 
+
+TECA is planning for the future and would like to set up their business so they are not so reliant on selling gas. One way to do that is to increase the sales of profitable products. Thus, TECA would like to predict when a transaction is a going to be a sale of a high gross profit margin product. Profit margin is the percentage of gross profit to revenue, or revenue minus costs divided by revenue. It is a percentage of how much profit each product makes or what percentage of profit is earned for each dollar of revenue.
+
+The first thing we need to do is bring in the dataset we are going to work with. This is TECA data that has been transformed to be used in our KNN analysis. Let's load it and examine it a bit. We first notice that the dataset has 20,000 rows and 38 features. This data is aggregated at the level of a purchase. Thus, each example or row is the purchase of one item. The first feature is the target feature or the dependent variable. This is the variable we are trying to predict. It is called `high_gpm`. It is a factor that is either low or high. Next, we see `revenue`. This variable is the amount of revenue TECA makes for each purchase. Revenue is a continuous variable. Next, we have four variables related to quarter. These are one-hot encoded or dummy variables for the quarter of the year. For example, if the purchase happened during the first quarter of the year, `quarter.1` would have a 1 value and the other three quarters' variables would have a 0. In using the KNN algorithm we must all of the features, except the target feature, as numbers. Thus, to we created these four dummy variables from a one feature that called `quarter` that had four different types of entries--'quarter 1', 'quarter 2', 'quarter 3', and 'quarter 4'. Next, `income`, `bachelors_degree`, and `population` list these averages for the location of the store where the purchase took place. Next, we have another set of dummy variables--for each of the states TECA operates in. Next, we have `num_trans`, which indicates how many purchases were made by this same person as part of this transaction. `basket.no` and `basket.yes` measure whether the purchase was part of a multi-part transaction. `refill.no` and `refill.yes` indicate whether or not the purchase was a refill of fountain soda. The next 11 dummy variables that all start with `area`, indicate the area of the store the purchase was made, as follows:
+*  `area.alcohol`: products in this area include, for example, wine and beer; 
+*  `area.cooler`: products in this area include, for example, energy drinks, canned soda, and juice; 
+*  `area.dispensed`: products in this area include, for example, cold and hot dispensed (fountain) drinks; 
+*  `area.fresh`: products in this area include, for example, pizza, hot sandwiches, salads, and roller grill items;
+*  `area.fuel`: products in this area include, for example, gas;
+*  `area.grocery`: products in this area include, for example, milk, eggs, and cheese; 
+*  `area.lottery`: products in this area include, for example, lottery tickets;
+*  `area.miscellaneous`: products in this area include, for example, store services and coupons; 
+*  `area.nongrocery`:  products in this area include, for example, clothing, magazines, medicine, and newspapers;
+*  `area.snacks`: products in this area include, for example, candy, gum, chips, and salty snacks; and
+*  `area.tobacco`: products in this area include, for example, cigarettes and chewing tobacco.
+
+Next, `items_sold` indicate how many of these items were purchased. Finally, the two loyalty dummies indicate whether the purchase was made by a loyalty customer (a customer who scanned their loyalty card) or not. Note, that the data was adjusted so that about half of the purchases in this dataset were made by loyalty customers, since TECA is particularly interested in these customers. 
+
+# Explore the data
+```{r}
+knn_input <- read_rds('knn_input.rds')
+str(knn_input)
+slice_sample(knn_input, n=10)
+```
+
+Let's look more in depth at the target feature. For KNN analysis, the target feature is a categorical variable. In this implementation we can leave it as a factor. About 44% of these purchases are for high gross profit items.
+
+# Explore the target feature
+```{r}
+freq <- table(knn_input$high_gpm)
+freq[2]/(freq[1]+freq[2])
+contrasts(knn_input$high_gpm)
+```
+
+Before using the algorithm, we need to prepare the data. The first line below loads the `caret` package. The next line sets the seed for the randomization that will be used for the algorithm. The `caret::createDataPartition()` function uses the caret package to split the data. Basically, it creates a number for `p` amount, in this case 0.75, of the target feature and lists these numbers in a matrix (since `list` is `FALSE`). Next, the training data and testing data are created. These use the numbers from the `partition` matrix that we just created. `data_train` retains each of the rows with numbers in `partition` while `data_test` takes the numbers not in partition, i.e., `-partition`.
+
+# Partition the data
+```{r}
+library(caret)
+set.seed(77)
+partition <- caret::createDataPartition(y=knn_input$high_gpm, p=.75, list=FALSE)
+data_train <- knn_input[partition, ]
+data_test <- knn_input[-partition, ]
+```
+
+Next, we need to remove the dependent variable, `high_gpm` to create testing data and training data without the target variable, `y` and training and testing data that is just the dependent variable.
+
+# Separate the target variable
+```{r}
+X_train <- data_train %>% select(-high_gpm)
+X_test <-  data_test %>% select(-high_gpm) 
+y_train <- data_train$high_gpm
+y_test <- data_test$high_gpm
+```
+
+Next, let's standardize our data. Recall, that KNN uses a distance function to determine its nearest neighbor. Thus, we need all of the variables to be on similar scales. This function creates matrices that have variables that have been standardized with z-score standardization. The mean of each feature is subtracted from each individual feature and then divided by that feature’s standard deviation. This transformation rescales the feature such it has a mean of zero and a standard deviation of one. Thus, it is measured in how many standard deviations it falls above or below its mean.
+
+# z-score standardization
+```{r}
+X_train <- scale(X_train)
+X_test <- scale(X_test)
+```
+
+Let's just double check that our training data is the correct percentage and that the size of the training input variables and the training output variables are the same.
+
+# Double check sizes
+```{r}
+nrow(X_train)/(nrow(X_test)+nrow(X_train))
+dim(X_train)
+length(y_train)
+```
+
+Finally, let's run the model. Please remember that this algorithm works differently from some of the others you will see. It is what we call lazy because it does not create a model, but rather stores all of the training data and then uses it on the test data all in one step. Thus, the training step and the prediction step are combined into one step. 
+
+To implement KNN we use one function that accepts four arguments:
+* The training data with the label's column/target variable removed
+* The testing data with the label's column/target variable removed
+* The class labels (`cl`)/target variable for the training data (but not the testing data, since that is what is being predicted), and
+* The K that we select.
+
+How did I select this k? There is no one right way to do this, but I just took the square root of the total number of rows. 
+
+`knn1` is a feature vector of predicted labels for each of the rows/examples in the test data. 
+
+# Run the model
+```{r}
+library(class)
+knn1 = class::knn(train=X_train, test=X_test, cl=y_train, k=141)
+```
+
+Finally, let's check to see how accurate our model is. We will use the function created at the beginning of the notebook. Overall, our model is very accurate. The model makes the correct prediction about 83% of the time! Recall, that KNN has used the training data to predict on the testing data. Thus, there is some assurance that the model would predict well on new data. 
+
+Let's explore some details of the accuracy of this model. The table shows the following output:
+* When a transaction is actually/truthfully a high gross profit margin transaction, the model correctly classifies it as such-by saying "high", 1700 times. This is called a True Positive (TP), Hit.
+
+* When a transaction is truthfully a low gross profit margin transaction, the model correctly classifies it as such--by saying "low", 2448 times. This is a True Negative (TN), Rejection.
+
+* On the other hand, the model makes two kinds of errors. When the model transaction is not a high gross profit margin transaction, but the model incorrectly says it is, this is called a False Positive (FP), Type 1 Error. It happens 367 times.
+
+* Finally, when a transaction is a high gross profit margin transaction and the model says it is not, which here happens 484, it is called a False Negative (FN), Type 2 Error.
+
+These numbers can then be manipulated to create different measures of accuracy, as follows:
+* Overall accuracy (TP+TN/(TP+TN+FP+FN)) is 0.8298.
+
+* Sensitivity, Recall, Hit Rate, True Positive Rate (How many positives did the model get right? TP/(TP+FN)), is 0.7784.
+
+* Specificity, Selectivity, True Negative Rate (How many negatives did the model get right? TN/(TN+FP)) is 0.8696. 
+
+* Precision, Positive Predictive Value (How good are the model's positive predictions? TP/(TP+FP)) is 0.8224.
+
+* Negative Predictive Value (How good are the model's negative predictions? TN/(TN+FN) is 0.8349.
+
+But what does this all tell us? Overall, our model does a great job at predicting when a purchase will be high profit margin versus low profit margin and gets it right 83% of the time. The aspect of the model that is the least effective is its sensitivity and the aspect that is the most effective is the specificity. This means that the models is very good at classifying the low margin purchases successfully (specificity), but slightly worse at classifying the high margin purchases correctly (sensitivity). Thus, while the model is quite good overall, it particularly excels at identifying bad transactions. 
+
+# Confusion matrix - checking accuracy
+```{r}
+table2 <- table(knn1, y_test) #prediction on left and truth on top
+my_confusion_matrix(table2)
+```
+
+The above confusion matrix was made from our function above. It is helpful because I put in some extra text that helps interpret the results. R, of course, has several packages that will build the confusion matrix for you. Here is one. Note, that we did need to specify which of our levels is the "Positive Class", since this normally takes the first level of the variable, which is our case is `low`, which is the "negative" class, or the wrong thing, rather than the thing we are predicting. One thing that is provided here is a significance test of accuracy. As you can see from the very low `P-Value` and `Mcnemar's Test P-Value`, our model is significant.
+
+# Pre-programmed confusion matrix
+```{r}
+caret::confusionMatrix(knn1, y_test, positive='high')
+
+```
+
+Finally, we can put the prediction back into the test data and compare when our model is and is not accurate. The first line of the code below adds the predicted low or high gross profit margin back to the test data. The second line creates a new variable called `correct` that takes on the value `TRUE` when the model was correct and `FALSE` when the model was incorrect. Printing out a sample of this dataframe and scrolling through it gives us the ability to investigate where the model went wrong.
+
+It also gives us some insight into TECA's problem. Just doing a quick scan, it seems like promoting certain areas, such as fresh and dispensed might help increase the sale of high profit margin products, while other areas, such as lottery, might not help. However, are efforts here were to make a prediction model. To examine the relevance of the factors we would need to employee another method, such as logistic regression or decision trees. 
+
+# Evaluate the data
+```{r}
+data_test$prediction <- knn1
+data_test <- data_test %>% mutate(correct = high_gpm==prediction)
+slice_sample(data_test, n=20)
+```
+
+Finally, note that we are not covering advanced topics such as hyperparameter tuning. When you gain more experience, you might want to examine methods for picking `k`, cross validation, etc. Our goal is to provide you the framework to understand the algorithm and start working with it. 
