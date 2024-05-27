@@ -1,0 +1,101 @@
+---
+title: "Week_4"
+author: "Moh"
+date: "2024-05-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, comment = NA, warning = FALSE, message = FALSE,
+  fig.align = 'center', fig.width = 7, fig.height = 5, fig.path = 'figures/', cache = TRUE, tidy = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(factoextra)
+options(tibble.print_max = Inf)
+options(tibble.width = Inf)
+```
+
+```{r}
+clustering_input2 <- read_rds('clustering_input2.rds')
+str(clustering_input2)
+slice_sample(clustering_input2, n=10)
+```
+
+
+```{r}
+clustering_input2 <- as.data.frame(scale(clustering_input2))
+```
+
+```{r}
+set.seed(777)
+clusters <- kmeans(clustering_input2, centers=7, iter.max=20, nstart=1)
+```
+
+
+```{r}
+clusters$size 
+```
+
+```{r}
+clusters$centers
+```
+```{r}
+clustering_input1 <- read_rds('clustering_input1.rds') 
+clustering_input1$cluster <- clusters$cluster
+clustering_input1 <- clustering_input1 %>% mutate(cluster_labels = case_when(
+  cluster==1 ~ 'everything', 
+  cluster==2 ~ 'fountain soda/coffee',
+  cluster==3 ~ 'gas only',
+  cluster==4 ~ 'cigarettes',
+  cluster==5 ~ 'meals',
+  cluster==6 ~ 'snacks',
+  cluster==7 ~ 'cooler'))
+
+clustering_input1[53:55, ]
+```
+
+```{r}
+fviz_cluster(clusters, clustering_input2,  geom = "point", show.clust.cent = FALSE, palette = "jco", ggtheme = theme_classic())
+```
+
+```{r}
+clustering_input2 <- read_rds('clustering_input2.rds')
+str(clustering_input2)
+slice_sample(clustering_input2, n=10)
+```
+
+```{r}
+clustering_input2 <- as.data.frame(scale(clustering_input2))
+```
+
+
+```{r}
+set.seed(777)
+clustering_input2_s <- clustering_input2[sample(nrow(clustering_input2), 15000), ]
+```
+
+```{r}
+dbscan::kNNdistplot(clustering_input2_s, k = 7)
+abline(h = 4)
+```
+
+```{r}
+set.seed(777)
+clusters_db <- dbscan(clustering_input2_s, eps = 4, minPts = 7)
+```
+
+```{r}
+table(clusters_db$cluster)
+```
+
+```{r}
+fviz_cluster(clusters_db, clustering_input2_s,  geom = "point", show.clust.cent = FALSE, palette = "jco", ggtheme = theme_classic())
+```
+```{r}
+clustering_input2_s$cluster <- clusters_db$cluster
+clustering_look <- clustering_input2_s %>% group_by(cluster) %>% summarize(n=n(), across('area.fresh':'refill.yes', mean))
+clustering_look
+```
+
